@@ -353,7 +353,7 @@ class Ui_iPhaser(QMainWindow):
         self.WORKING = True
         self.video = True
         self.init_video()
-        video_file_name = os.path.join(self.save_folder, self.e1.text()+ "_" + self.e1.text() + "_" + self.start_time.replace(":", "-") + ".avi")
+        video_file_name = os.path.join(self.save_folder, self.e1.text().replace(":", "_").replace(" ", "-") + "_" + self.start_time.replace(":", "-") +".avi")
         self.output_video = cv2.VideoWriter(video_file_name, self.CODEC, self.stream_fps, (self.FRAME_WIDTH, self.FRAME_HEIGHT))
         self.startTime = datetime.datetime.now()
         lineEdits = self.trainLabel.findChildren(QLineEdit)
