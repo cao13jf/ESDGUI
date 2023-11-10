@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QCoreApplication, QPoint, QTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread, QTimer
 from PyQt5.QtWidgets import *
 import cv2
 import time

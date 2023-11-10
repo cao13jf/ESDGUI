@@ -156,4 +156,4 @@ dependencies:
       - scikit-image==0.17.2
       - tifffile==2020.9.3
       - yacs==0.1.8
-prefix: /home/a/anaconda3/envs/ESDSafety
+prefix: /home/a/anaconda3/envs/ESDSafety~

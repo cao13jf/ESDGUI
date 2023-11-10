@@ -1,26 +1,17 @@
 import os
 import sys
 import cv2
-import pickle
 import torch
 import time
-import argparse
 from glob import glob
-from tqdm import tqdm
-from datetime import datetime
 import numpy as np
 import pandas as pd
 import albumentations as A
-from threading import Thread
-
+sys.path.append(os.getcwd())
 
 from networks.vit_seg_modeling import VisionTransformer as ViT_seg
 from networks.vit_seg_modeling import CONFIGS as CONFIGS_ViT_seg
-from utils.parser import ParserUse
 from configs.para import args
-
-from torch.utils.data import DataLoader
-from dataset.esd import VideoSample
 
 from model.resnet import ResNet
 from model.mstcn import MultiStageModel

@@ -2,7 +2,6 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBoxLayout, QPushButton, QSizePolicy, QGraphicsScene, QGraphicsView, QColorDialog, QWidget
 from PyQt5.QtGui import QPixmap, QImage, QPainter, QPen, QColor, QBitmap, QRegion, QBrush
 from PyQt5.QtCore import Qt, QPoint, QRect, pyqtSignal
-from utils.sam import *
 import torch
 
 class Canvas(QLabel):

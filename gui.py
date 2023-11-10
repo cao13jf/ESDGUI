@@ -1,4 +1,5 @@
 import os
+import torch
 import cv2
 import sys
 import time
@@ -12,7 +13,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from PyQt5.Qt import *
 import torch
 import random
 
@@ -21,9 +21,6 @@ from utils.parser import ParserUse
 from utils.gui_parts import *
 from canvas import Canvas
 from canvas_video import MainWindow
-from utils.sam import *
-#from utils.guis import PhaseCom, draw_segmentation, add_text
-#from utils.report_tools import generate_report, get_meta
 
 warnings.filterwarnings("ignore")
 DEFAULT_STYLE = """
@@ -107,7 +104,7 @@ class Ui_iPhaser(QMainWindow):
         self.down_ratio = 1#cfg.down_ratio
         # Statue parameters
         self.init_status()
-        Vblocks = ['case information','phase recognition', 'object detection', 'summary report']
+        Vblocks = ['case information','phase recognition', 'summary report']
         Hblocks = ['training session']
         self.FRAME_WIDTH, self.FRAME_HEIGHT, self.stream_fps = self.get_frame_size()
         self.MANUAL_FRAMES = self.stream_fps * cfg.manual_set_fps_ratio
@@ -167,7 +164,7 @@ class Ui_iPhaser(QMainWindow):
         # self.start_y = 450
         self.end_y = 450
         # cv_img[0:1150, 450:1800]
-        self.save_folder = "../Records"
+        self.save_folder = os.path.join(os.getcwd(), "Records")
         if not os.path.isdir(self.save_folder):
             os.makedirs(self.save_folder)
         self.down_ratio = 1#cfg.down_ratio
@@ -218,16 +215,6 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton.setIcon(self.stop_pixmap)
         self.stopButton.setIconSize(QtCore.QSize(150,150))
         self.stopButton.clicked.connect(self.onButtonClickStop)
-        self.promptEnsure = QPushButton("OK", self)
-        self.promptEnsure.setObjectName("PromptEnsureButton")
-        self.promptEnsure.setFont(QFont("Arial", 14))
-        self.promptEnsure.setGeometry(QtCore.QRect(1550, 155, 80, 80))
-        self.promptEnsure.clicked.connect(self.onButtonPromptEnsure)
-        self.promptCancel = QPushButton("CANCEL", self)
-        self.promptCancel.setObjectName("PromptCancelButton")
-        self.promptCancel.setFont(QFont("Arial", 14))
-        self.promptCancel.clicked.connect(self.onButtonPromptCancel)
-        self.promptCancel.setGeometry(QtCore.QRect(1650, 155, 80, 80))
         
         # video window
         self.promptEnsure = QPushButton("Video ", self)
@@ -262,11 +249,6 @@ class Ui_iPhaser(QMainWindow):
         self.VLayout1.addWidget(self.trainLabel, 84)
         self.VLayout2 = QtWidgets.QVBoxLayout()
         self.VLayout2.setObjectName("VLayout2")
-        self.painterTitle = QtWidgets.QLabel('Painter')
-        self.painterTitle.setObjectName("PainterTitle")
-        self.painterTitle.setStyleSheet("color:blue;")
-        self.painterTitle.setFont(QFont("Arial", 18, QFont.Bold))
-        self.VLayout2.addWidget(self.painterTitle, 16)
         self.labelSelector = QComboBox()
         self.labelSelector.setObjectName("LabelSelector")
         self.labelSelector.setStyleSheet(COMBOBOX)
@@ -276,11 +258,6 @@ class Ui_iPhaser(QMainWindow):
         self.labelSelector.lineEdit().setReadOnly(True)
         self.labelSelector.setCurrentIndex(-1)
         self.labelSelector.currentTextChanged.connect(self.on_combobox_changed)
-        self.painter = QtWidgets.QWidget()
-        self.painter.setObjectName("Painter")
-        self.painter.setAttribute(Qt.WA_StyledBackground, True)
-        self.painter.setStyleSheet("QWidget#Painter{background-color: #dee0e3; border-radius:5px}")
-        self.VLayout2.addWidget(self.painter, 84)
         self.horizontalLayout.addLayout(self.VLayout1, 50)
         self.horizontalLayout.addLayout(self.VLayout2, 50)
         Vpercent = 100 / len(Vblocks)
@@ -291,9 +268,7 @@ class Ui_iPhaser(QMainWindow):
         self.setupCaseInformation()
         self.setupTrainer()
         self.setupPhaseRecog()
-        self.setupObjectDetection(4)
         self.setupSummary()
-        self.setupPainter()
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
     
@@ -472,119 +447,7 @@ class Ui_iPhaser(QMainWindow):
         e.addWidget(e7, 3, 0)
         e.addWidget(e8, 3, 1)
         self.trainLabel.setLayout(e)
-    
-    def setupPainter(self):
-        egrid = QGridLayout()
-        ehlay = QHBoxLayout()
-        ehlay2 = QHBoxLayout()
-        ehlay3 = QHBoxLayout()
-        ehlay4 = QHBoxLayout()
-        e00 = QPushButton('Add New Label')
-        e00.setObjectName("AddLabelButton")
-        e00.setFont(QFont("Arial", 14))
-        e00.clicked.connect(self.onButtonAddLabel)
-        e0 = QLabel('Label Selector:')
-        e0.setObjectName("LabelSelector")
-        e0.setFont(QFont("Arial", 14))
-        e1 = QPushButton('Load')
-        e1.setObjectName("LoadImageButton")
-        e1.setFont(QFont("Arial", 14))
-        e1.clicked.connect(self.load_image)
-        e2 = QPushButton('Erase')
-        e2.setObjectName("EraseButton")
-        e2.setFont(QFont("Arial", 14))
-        e2.clicked.connect(self.onButtonErase)
-        e3 = QPushButton('Paint')
-        e3.setObjectName("PaintButton")
-        e3.setFont(QFont("Arial", 14))
-        e3.clicked.connect(self.onButtonPaint)
-        e7 = QPushButton('SAM')
-        e7.setObjectName("SAMButton")
-        e7.setFont(QFont("Arial", 14))
-        e7.clicked.connect(self.onButtonPredict)
-        e4 = QPushButton('Save')
-        e4.setObjectName("SaveButton")
-        e4.setFont(QFont("Arial", 14))
-        e4.clicked.connect(self.onButtonSave)
-        e5 = QPushButton('Color')
-        e5.setObjectName("PickColorButton")
-        e5.setFont(QFont("Arial", 14))
-        e5.clicked.connect(self.pick_color)
-        #e7.clicked.connect(self.onButtonRedo)
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setObjectName("ThicknessSlider")
-        self.slider.setMinimum(1)
-        self.slider.setMaximum(25)
-        self.slider.setSingleStep(1)
-        self.slider.setTickInterval(1)
-        self.slider.setTickPosition(QSlider.TicksBelow)
-        self.slider.valueChanged.connect(self.onSliderValueChanged)
-        self.thickness = QLineEdit('1')
-        self.thickness.setObjectName("ThicknessInput")
-        self.thickness.setStyleSheet("background-color: white;color:black")
-        self.thickness.setAlignment(Qt.AlignCenter)
-        self.thickness.setFont(QFont("Arial", 14))
-        self.thickness.setFixedWidth(50)
-        self.thickness.textEdited.connect(self.onLineEditsChanged)
-        self.beginLabel = QLabel('Begin: (0, 0)')
-        self.beginLabel.setObjectName("BeginLabel")
-        self.beginLabel.setFont(QFont("Arial", 14))
-        self.beginLabel.setAlignment(Qt.AlignLeft)
-        self.endLabel = QLabel('End: (0, 0)')
-        self.endLabel.setObjectName("EndLabel")
-        self.endLabel.setFont(QFont("Arial", 14))
-        self.endLabel.setAlignment(Qt.AlignLeft)
-        ehlay.addWidget(e00)
-        ehlay.addWidget(e0)
-        ehlay.addWidget(self.labelSelector)
-        ehlay2.addWidget(e1)
-        ehlay2.addWidget(e2)
-        ehlay2.addWidget(e3)
-        ehlay2.addWidget(e7)
-        ehlay2.addWidget(e4)
-        ehlay2.addWidget(e5)
-        ehlay3.addWidget(self.slider)
-        ehlay3.addWidget(self.thickness)
-        ehlay4.addWidget(self.beginLabel)
-        ehlay4.addWidget(self.endLabel)
-        egrid.addLayout(ehlay, 0, 0)
-        egrid.addLayout(ehlay2, 1, 0)
-        egrid.addLayout(ehlay3, 2, 0)
-        egrid.addLayout(ehlay4, 3, 0)
-        self.painter.setLayout(egrid)
-    
-    
-    def onButtonPromptEnsure(self):
-        box_0 = self.beginLabel.text().replace(" ", "")
-        box_0 = box_0.split('(')[1].split(')')[0].strip(' ')
-        box_1 = self.endLabel.text().replace(" ", "")
-        box_1 = box_1.split('(')[1].split(')')[0].strip(' ')
-        assert box_0.split(',')[0].isnumeric() and box_0.split(',')[1].isnumeric()
-        assert box_1.split(',')[0].isnumeric() and box_1.split(',')[1].isnumeric()
-        box_0x = int(box_0.split(',')[0])
-        box_0y = int(box_0.split(',')[1])
-        box_1x = int(box_1.split(',')[0])
-        box_1y = int(box_1.split(',')[1])
-        input_box = np.array([box_0x, box_0y, box_1x, box_1y])
-        device = torch.device('cuda:0')
-        image_dim = (self.canvas.image.size().width(), self.canvas.image.size().height())
-        masks, overlay = prompt_sam_predict(self.filepath, input_box, image_dim, device=device)
-        height, width, channel = overlay.shape
-        bytes_per_line = 3 * width
-        image = QImage(overlay, width, height, bytes_per_line, QImage.Format_RGB888).scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
-        self.canvas.image = image
-        self.label_mask = QImage(image.size(), QImage.Format_ARGB32)
-        self.label_mask.fill(Qt.transparent)
-        self.canvas.label_mask = self.label_mask
-        self.canvas.setPixmap(QPixmap.fromImage(image))
-        self.canvas.setGeometry(QtCore.QRect(500, 250, image.size().width(), image.size().height()))
-        self.labelSelector.setCurrentIndex(-1)
 
-
-    
-    def onButtonPromptCancel(self):
-        pass
-    
     def load_image(self):
         if self.video:
             msg = QMessageBox()
@@ -704,29 +567,6 @@ class Ui_iPhaser(QMainWindow):
                 e1_group.setLayout(hbox_1)
                 self.elayout.addWidget(e1_group, count-1, 0)
                 self.elayout.setAlignment(Qt.AlignLeft)
-    
-    
-    def onButtonPredict(self):
-        self.SAMBOX = SAMMB(self.samFull, self.samPrompt)
-        self.SAMBOX.exec_()
-        
-    def samPrompt(self):
-        self.canvas.prompt = True
-        
-    
-    def samFull(self):
-        device = torch.device('cuda:0')
-        masks, overlay = full_sam_predict(self.filepath, device=device)
-        height, width, channel = overlay.shape
-        bytes_per_line = 3 * width
-        image = QImage(overlay, width, height, bytes_per_line, QImage.Format_RGB888).scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
-        self.canvas.image = image
-        self.label_mask = QImage(image.size(), QImage.Format_ARGB32)
-        self.label_mask.fill(Qt.transparent)
-        self.canvas.label_mask = self.label_mask
-        self.canvas.setPixmap(QPixmap.fromImage(image))
-        self.canvas.setGeometry(QtCore.QRect(500, 250, image.size().width(), image.size().height()))
-        self.labelSelector.setCurrentIndex(-1)
     
     
     def setupCaseInformation(self):
@@ -917,171 +757,6 @@ class Ui_iPhaser(QMainWindow):
         egrid.addWidget(self.phase4_prob, 3, 2)
         egrid.setAlignment(Qt.AlignCenter)
         widget.setLayout(egrid)
-     
-    def setupObjectDetection(self, number_of_colors):
-        self.raw_color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
-             for i in range(number_of_colors)]
-        self.color = []
-        for i in self.raw_color:
-            new_r, new_g, new_b = hex_to_rgb(i)
-            self.color.append(QColor(new_b, new_g, new_r))
-            
-        num_widget = self.verticalLayout.count()
-        while num_widget > 0:
-            widget = self.verticalLayout.itemAt(num_widget-1).widget()
-            if widget.objectName() == 'ObjectDetection':
-                break
-            num_widget -= 1
-        
-        self.vvlayout = QVBoxLayout(widget)
-        self.vvlayout.setObjectName("ObjectDetectionVlayout")
-        self.scrollArea = QtWidgets.QScrollArea()
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setObjectName("ObjectDetectionScrollArea")
-        self.scrollArea.setStyleSheet("QScrollArea#ObjectDetectionScrollArea{border:0;}")
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setObjectName("ObjectDetectionScrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setAttribute(Qt.WA_StyledBackground, True)
-        self.scrollAreaWidgetContents.setStyleSheet("QWidget#ObjectDetectionScrollAreaWidgetContents{background-color: #dee0e3;border:0;}")
-        self.elayout = QGridLayout(self.scrollAreaWidgetContents)
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        self.vvlayout.addWidget(self.scrollArea)
-        e1_group = QGroupBox()
-        e1_group.setObjectName("Object1Group")
-        e1_group.setStyleSheet("QGroupBox#Object1Group{border:0;}")
-        self.e1_button = QRadioButton()
-        self.e1_button.setChecked(True)
-        self.e1_button.setStyleSheet(
-                                "QRadioButton"
-                                "{"
-                                "color : green;"
-                                "}"
-                                "QRadioButton::indicator"
-                                "{"
-                                "width : 20px;"
-                                "height : 20px;"
-                                "}")
-        self.e1_button.setObjectName("Object1Button")
-        self.e1_button.toggled.connect(self.e1_button_toggled)
-        self.e1_object = QLabel()
-        self.e1_object.setObjectName("Object1")
-        self.e1_object.setStyleSheet(f"background-color : {self.raw_color[0]};")
-        self.e1_object.setFixedWidth(20)
-        self.e1_object.setFixedHeight(20)
-        e2 = QLabel("Object 1 Name")
-        e2.setObjectName("Object1Name")
-        e2.setFont(QFont("Arial", 14, QFont.Bold))
-        e2.setStyleSheet("color:black;")
-        hbox_1 = QHBoxLayout()
-        hbox_1.setObjectName("Object1Layout")
-        hbox_1.addWidget(self.e1_button)
-        hbox_1.addWidget(self.e1_object)
-        hbox_1.addWidget(e2)
-        hbox_1.setAlignment(Qt.AlignLeft)
-        e1_group.setLayout(hbox_1)
-        e2_group = QGroupBox()
-        e2_group.setObjectName("Object2Group")
-        e2_group.setStyleSheet("QGroupBox#Object2Group{border:0;}")
-        e3_button = QRadioButton()
-        e3_button.setObjectName("Object2Button")
-        e3_button.setChecked(False)
-        e3_button.setStyleSheet(
-                                "QRadioButton"
-                                "{"
-                                "color : green;"
-                                "}"
-                                "QRadioButton::indicator"
-                                "{"
-                                "width : 20px;"
-                                "height : 20px;"
-                                "}")
-        e3 = QLabel()
-        e3.setObjectName("Object2")
-        e3.setStyleSheet(f"background-color : {self.raw_color[1]};")
-        e3.setFixedWidth(20)
-        e3.setFixedHeight(20)
-        e4 = QLabel("Object 2 Name")
-        e4.setObjectName("Object2Name")
-        e4.setFont(QFont("Arial", 14, QFont.Bold))
-        e4.setStyleSheet("color:black;")
-        hbox_2 = QHBoxLayout()
-        hbox_2.setObjectName("Object2Layout")
-        hbox_2.addWidget(e3_button)
-        hbox_2.addWidget(e3)
-        hbox_2.addWidget(e4)
-        hbox_2.setAlignment(Qt.AlignLeft)
-        e2_group.setLayout(hbox_2)
-        e3_group = QGroupBox()
-        e3_group.setObjectName("Object3Group")
-        e3_group.setStyleSheet("QGroupBox#Object3Group{border:0;}")
-        e5_button = QRadioButton()
-        e5_button.setObjectName("Object3Button")
-        e5_button.setChecked(False)
-        e5_button.setStyleSheet(
-                                "QRadioButton"
-                                "{"
-                                "color : green;"
-                                "}"
-                                "QRadioButton::indicator"
-                                "{"
-                                "width : 20px;"
-                                "height : 20px;"
-                                "}")
-        e5 = QLabel()
-        e5.setObjectName("Object3")
-        e5.setStyleSheet(f"background-color : {self.raw_color[2]};")
-        e5.setFixedWidth(20)
-        e5.setFixedHeight(20)
-        e6 = QLabel("Object 3 Name")
-        e6.setObjectName("Object3Name")
-        e6.setFont(QFont("Arial", 14, QFont.Bold))
-        e6.setStyleSheet("color:black;")
-        hbox_3 = QHBoxLayout()
-        hbox_3.setObjectName("Object3Layout")
-        hbox_3.addWidget(e5_button)
-        hbox_3.addWidget(e5)
-        hbox_3.addWidget(e6)
-        hbox_3.setAlignment(Qt.AlignLeft)
-        e3_group.setLayout(hbox_3)
-        e4_group = QGroupBox()
-        e4_group.setObjectName("Object4Group")
-        e4_group.setStyleSheet("QGroupBox#Object4Group{border:0;}")
-        e7_button = QRadioButton()
-        e7_button.setObjectName("Object4Button")
-        e7_button.setChecked(False)
-        e7_button.setStyleSheet(
-                                "QRadioButton"
-                                "{"
-                                "color : green;"
-                                "}"
-                                "QRadioButton::indicator"
-                                "{"
-                                "width : 20px;"
-                                "height : 20px;"
-                                "}")
-        e7 = QLabel()
-        e7.setObjectName("Object4")
-        e7.setStyleSheet(f"background-color : {self.raw_color[3]};")
-        e7.setFixedWidth(20)
-        e7.setFixedHeight(20)
-        e8 = QLabel("Object 4 Name")
-        e8.setObjectName("Object4Name")
-        e8.setFont(QFont("Arial", 14, QFont.Bold))
-        e8.setStyleSheet("color:black;")
-        hbox_4 = QHBoxLayout()
-        hbox_4.setObjectName("Object4Layout")
-        hbox_4.addWidget(e7_button)
-        hbox_4.addWidget(e7)
-        hbox_4.addWidget(e8)
-        hbox_4.setAlignment(Qt.AlignLeft)
-        e4_group.setLayout(hbox_4)
-        self.elayout.addWidget(e1_group, 0, 0)
-        self.elayout.addWidget(e2_group, 1, 0)
-        self.elayout.addWidget(e3_group, 2, 0)
-        self.elayout.addWidget(e4_group, 3, 0)
-        self.elayout.setAlignment(Qt.AlignLeft)
-        self.labelSelector.addItems(['Object 1', 'Object 2', 'Object 3', 'Object 4'])
-        self.labelSelector.setCurrentIndex(-1)
     
     def e1_button_toggled(self):
         pass
