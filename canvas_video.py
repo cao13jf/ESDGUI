@@ -155,7 +155,6 @@ class MainWindow(QMainWindow):
             
     def load_video(self):
         file_path, _ = QFileDialog.getOpenFileName(self, 'Open Video', '', 'Videos (*.avi *.mp4 *.mkv)')
-        print(file_path)
         if file_path:
             self.video_capture = cv2.VideoCapture(file_path)
             self.timer = QTimer()
