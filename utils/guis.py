@@ -165,16 +165,16 @@ class PhaseCom(object):
     def load_model(self):
 
         # Load segmentation model
-        config_vit = CONFIGS_ViT_seg[args.vit_name]
-        config_vit.n_classes = args.num_classes
-        config_vit.n_skip = args.n_skip
-        if args.vit_name.find('R50') != -1:
-            config_vit.patches.grid = (int(args.img_size / args.vit_patches_size), int(args.img_size / args.vit_patches_size))
-        self.net = ViT_seg(config_vit, img_size=args.img_size, num_classes=config_vit.n_classes).cuda()
-        snapshot = './runs/epoch_149.pth'
-        self.net.load_state_dict(torch.load(snapshot))
-        self.net.cuda()
-        self.net.eval()
+        # config_vit = CONFIGS_ViT_seg[args.vit_name]
+        # config_vit.n_classes = args.num_classes
+        # config_vit.n_skip = args.n_skip
+        # if args.vit_name.find('R50') != -1:
+        #     config_vit.patches.grid = (int(args.img_size / args.vit_patches_size), int(args.img_size / args.vit_patches_size))
+        # self.net = ViT_seg(config_vit, img_size=args.img_size, num_classes=config_vit.n_classes).cuda()
+        # snapshot = './runs/epoch_149.pth'
+        # self.net.load_state_dict(torch.load(snapshot))
+        # self.net.cuda()
+        # self.net.eval()
 
 
         # Load phase recognition model
