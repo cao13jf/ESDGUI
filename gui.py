@@ -49,36 +49,50 @@ COMBOBOX = """
         """
 
 
-class VideoThread(QThread):
-    change_pixmap_signal = pyqtSignal(np.ndarray)
-    process_img_signal = pyqtSignal(np.ndarray, int)
+def add_text(fc, results, fps, frame):
+    w, h, c = frame.shape
+    cv2.putText(frame, "   Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (30, 20), cv2.FONT_HERSHEY_SIMPLEX,
+                0.5, (0, 255, 0), 1)
+    cv2.putText(frame, "  Phase: {:<15s}".format(results), (30, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+    cv2.putText(frame, " Trainee: {:<15s}".format(fps), (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+    # cv2.putText(frame, " Blood vessel".format(fps), (140, w - 40),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+    # cv2.putText(frame, " Muscularis".format(fps), (140, w - 80),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    # cv2.putText(frame, " Submucosa".format(fps), (140, w - 120),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
+
+    return frame
+
+class ImageProcessingThread(QThread):
+    processed_frame = pyqtSignal(np.ndarray)
+
+    def __init__(self, start_x, end_x, start_y, end_y, cfg):
+        super().__init__()
+        self.start_x = start_x
+        self.end_x = end_x
+        self.start_y = start_y
+        self.end_y = end_y
+        self.frames_to_process = []
+        self.phaseseg = PhaseCom(arg=cfg)
+        self.processing_interval = 5
 
     def run(self):
-        frame_idx = 0
-        # capture from web cam
-        cap = cv2.VideoCapture("dataset/Case_D.MP4")
-        # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        while True:
+            if len(self.frames_to_process) >= self.processing_interval:
+                frame = self.frames_to_process[-1]
+                pred = self.process_image(frame)
+                self.frames_to_process = []
+                self.processed_frame.emit(pred)
 
-        # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
-        time.sleep(0.5)
-        if cap.isOpened():
-            while True:
-                frame_idx += 1
-                ret, cv_img = cap.read()
-                # print(ret)
-                time.sleep(0.1)
-                if ret:
-                    # print(cv_img)
+    def process_image(self, img):
+        cv_img = img[self.start_x:self.end_x, self.start_y:self.end_y]  # Crop images
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        pred = self.phaseseg.phase_frame(rgb_image)  # TODO:可以用time查看該語句的延遲時間
 
-                    self.change_pixmap_signal.emit(cv_img)
-                    self.process_img_signal.emit(cv_img, frame_idx)
+        return pred, img
 
-                else:
-                    cap.release()
-                    assert "Cannot get frame"
-        else:
-            cap.release()
-            assert "Cannot get frame"
+
+    def add_frame(self, frame):
+        self.frames_to_process.append(frame)
 
 
 class Ui_iPhaser(QMainWindow):
@@ -145,6 +159,7 @@ class Ui_iPhaser(QMainWindow):
         self.ru = 0
         self.aaa = 0
         self.bbb = 0
+        self.index2phase = {0: "Idle", 1: "Marking", 2: "Injection", 3: "Dissection"}
         self.centralwidget = QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.resizeEvent = self.windowResized
@@ -164,7 +179,6 @@ class Ui_iPhaser(QMainWindow):
 
 
 
-        self.phaseseg = PhaseCom(arg=cfg)
         self.video = False
         self.disply_width = 1080
         self.display_height = 720
@@ -285,6 +299,22 @@ class Ui_iPhaser(QMainWindow):
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
+        self.camera = cv2.VideoCapture(0)
+        self.process_frames = False
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_image)
+        self.timer.start(30)
+
+        self.processing_thread = ImageProcessingThread(start_x=self.start_x,
+                                                       end_x=self.end_x,
+                                                       start_y=self.start_y,
+                                                       end_y=self.end_y,
+                                                       cfg=cfg)
+        self.processing_thread.processed_frame.connect(self.display_processed_frame)
+        self.processing_thread.moveToThread(QCoreApplication.instance().thread())
+        self.processing_thread.start()
+
     def windowResized(self, event):
         # Get the current window size
         width = self.centralwidget.width()
@@ -313,21 +343,19 @@ class Ui_iPhaser(QMainWindow):
         self.startButton.setGeometry(QtCore.QRect(self.width() - 300, 100, 80, 80))
         self.stopButton.setGeometry(QtCore.QRect(self.width() - 200, 100, 80, 80))
 
-
-    def init_video(self):
-        # create the video capture thread
-        self.thread = VideoThread()
-        # connect its signal to the update_image slot
-        self.thread.change_pixmap_signal.connect(self.update_image)
-        self.thread.process_img_signal.connect(self.process_img)
-        # start the thread
-        self.thread.start()
-
-    def update_image(self, cv_img):
+    def update_image(self):
         """Convert from an opencv image to QPixmap"""
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        ret, frame = self.camera.read()
+        if ret:
+            if self.WORKING:
+                self.processing_thread.add_frame(frame)
+            else:
+                self.display_frame(frame)
+
+    def display_frame(self, frame):
+        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         self.manual_frame = self.manual_frame - 1
         if self.manual_frame <= 0:
             self.manual_frame = 0
@@ -336,61 +364,43 @@ class Ui_iPhaser(QMainWindow):
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             if self.manual_frame > 0:
                 self.pred = self.manual_set
-
-            # print(self.seg_pred)
-            # rgb_image = self.phaseseg.draw_segmentation(self.seg_pred, rgb_image, start_x=self.start_x,
-            #                                             end_x=self.end_x, start_y=self.start_y, end_y=self.end_y,
-            #                                             alpha=self.seg_alpha)
-            rgb_image = self.phaseseg.add_text(self.date_time, self.pred, self.trainee_name, rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee_name, rgb_image)
         if self.WORKING:
             # print('write', rgb_image.shape)
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             rbg_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-            # TODO: 目前text是overlay到rgb圖像后，再利用下面的setPixmap更新顯示的video，但是非常耗時，看看這段能不能優化。正常情況下
-            # TODO: 顯示video應該是很快的（見tem.py例子），而且模型處理的時間應該也很短，不會造成明顯的延遲。self.phaseseg.phase_frame(rgb_image)
-            rgb_image = self.phaseseg.add_text(self.date_time, self.pred, self.trainee_name, rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee_name, rgb_image)
             # self.output_video.write(rbg_image)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
         p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(),  Qt.KeepAspectRatio)
         p = QPixmap.fromImage(p)
-        # print('done')
-        # print(self.INIT)
         self.DisplayVideo.setPixmap(p)
 
-    def process_img(self, cv_img, frame_idx):
-        # print("test")
-        # cv_img = cv_img[30:1050, 695:1850]
-        cv_img = cv_img[self.start_x:self.end_x, self.start_y:self.end_y]  # Crop images
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        self.states = {0: self.phase1_state, 1: self.phase2_state, 2: self.phase3_state, 3: self.phase4_state}
-        if frame_idx % self.down_ratio == 0 and self.WORKING:
-            self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S.%f")
-            start_time = time.time()
-            import torch
-            self.pred, self.prob, index = self.phaseseg.phase_frame(rgb_image)  # TODO:可以用time查看該語句的延遲時間
-            for key, val in self.states.items():
-                val.setChecked(False)
-            self.phase1_prob.setValue(int(self.prob[0] * 100))
-            self.phase2_prob.setValue(int(self.prob[1] * 100))
-            self.phase3_prob.setValue(int(self.prob[2] * 100))
-            self.phase4_prob.setValue(int(self.prob[3] * 100))
-            self.states[index].setChecked(True)
-            print(self.pred)
-            # self.seg_pred = self.phaseseg.seg_frame(rgb_image)
-
-            # if self.force_seg:
-            #     self.seg_alpha = 0.2
-            # elif self.enable_seg and (self.pred == "dissection" or self.manual_set == "dissection"):
-            #     self.seg_alpha = 0.2
-            # else:
-            #     self.seg_alpha = 0.0
-
-            # self.DisplayPhase.setText(self.pred)
-            end_time = time.time()
-            self.fps = 1 / np.round(end_time - start_time, 3)
-            print("Inference FPS {}".format(self.fps, np.round(end_time - start_time, 3)))
+    def display_processed_frame(self, pred, frame):
+        self.manual_frame = self.manual_frame - 1
+        pred_index = np.argmax(pred)
+        self.pred = self.index2phase[pred_index]
+        if self.manual_frame <= 0:
+            self.manual_frame = 0
+            self.manual_set = "--"
+        if self.INIT:
+            self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+            if self.manual_frame > 0:
+                self.pred = self.manual_set
+            frame = add_text(self.date_time, self.pred, self.trainee_name, frame)
+        if self.WORKING:
+            # print('write', rgb_image.shape)
+            self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+            frame = add_text(self.date_time, self.pred, self.trainee_name, frame)
+            # self.output_video.write(rbg_image)
+        h, w, ch = frame.shape
+        bytes_per_line = ch * w
+        convert_to_Qt_format = QtGui.QImage(frame.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(),  Qt.KeepAspectRatio)
+        p = QPixmap.fromImage(p)
+        self.DisplayVideo.setPixmap(p)
 
     def onButtonClickStart(self):
         self.startButton.setStyleSheet("background-color: green;")
@@ -399,7 +409,6 @@ class Ui_iPhaser(QMainWindow):
         self.flag = True
         self.WORKING = True
         self.video = True
-        self.init_video()
         video_file_name = os.path.join(self.save_folder, self.e1.text().replace(":", "_").replace(" ",
                                                                                                   "-") + "_" + self.start_time.replace(
             ":", "-") + ".avi")

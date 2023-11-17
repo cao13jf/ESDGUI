@@ -150,7 +150,7 @@ class PhaseCom(object):
         self.label2phase_dict = label_dict
         self.aug = A.Compose([
          #   A.Resize(250, 250),
-            A.CenterCrop(224, 224),
+            A.Resize(224, 224),
             A.Normalize()
         ])
 
@@ -241,7 +241,7 @@ class PhaseCom(object):
             out = self.transformer(temporal_feature.detach(), cat_frame_feature)[-1].softmax(dim=-1).cpu().numpy()
             del frame, cat_frame_feature, temporal_feature
         torch.cuda.empty_cache()
-        return self.label2phase_dict[np.argmax(pred, axis=0)], out, np.argmax(pred, axis=0)
+        return out
 
     def draw_segmentation(self, pred, rgb_image, start_x, end_x, start_y, end_y, alpha):
         
