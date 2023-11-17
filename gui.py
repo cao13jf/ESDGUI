@@ -90,7 +90,7 @@ class Ui_iPhaser(QMainWindow):
         self.resize(1825, 1175)
         self.setMinimumHeight(965)
         self.setMinimumWidth(965)
-        self.setStyleSheet("QWidget#iPhaser{background-color: black}")
+        self.setStyleSheet("QWidget#iPhaser{background-color: #212121}")
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         old_pos = self.frameGeometry().getRect()
         curr_x = old_pos[2]
