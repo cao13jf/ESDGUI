@@ -1,25 +1,52 @@
-# import the opencv library
-import cv2
+# ======================
+# demo for reading camera
+# ======================
 
-# define a video capture object
-vid = cv2.VideoCapture(0)
+# # import the opencv library
+# import cv2
+#
+# # define a video capture object
+# vid = cv2.VideoCapture(0)
+#
+# while (True):
+#
+#     # Capture the video frame
+#     # by frame
+#     ret, frame = vid.read()
+#
+#     # Display the resulting frame
+#     cv2.imshow('frame', frame)
+#
+#     # the 'q' button is set as the
+#     # quitting button you may use any
+#     # desired button of your choice
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
+#
+# # After the loop release the cap object
+# vid.release()
+# # Destroy all the windows
+# cv2.destroyAllWindows()
 
-while (True):
 
-    # Capture the video frame
-    # by frame
-    ret, frame = vid.read()
+# =========================
+# read
+# =========================
 
-    # Display the resulting frame
-    cv2.imshow('frame', frame)
+cap = cv2.VideoCapture('path/to/your/video.mp4')  # Replace with the path to your video file
 
-    # the 'q' button is set as the
-    # quitting button you may use any
-    # desired button of your choice
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+while cap.isOpened():
+    ret, frame = cap.read()
+
+    if ret:
+        frame = overlay_time(frame)
+
+        cv2.imshow('Video Overlay', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    else:
         break
 
-# After the loop release the cap object
-vid.release()
-# Destroy all the windows
+cap.release()
 cv2.destroyAllWindows()
