@@ -229,7 +229,7 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton.clicked.connect(self.onButtonClickStop)
 
         self.layoutWidget = QtWidgets.QWidget(self)
-        self.layoutWidget.setGeometry(QtCore.QRect(30, 20, 440, 675))
+        self.layoutWidget.setGeometry(QtCore.QRect(30, 20, 440, 800))
         self.layoutWidget.setObjectName("layoutWidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -959,6 +959,10 @@ class Ui_iPhaser(QMainWindow):
         widget1.setStyleSheet(
             f"QWidget#{name.title().replace(' ', '')}" + "{background-color: #757575; border-radius:5px;}")
         self.verticalLayout.addWidget(widget1, 21)
+        gapWidget = QtWidgets.QWidget()
+        gapWidget.setFixedWidth(50)  # Set the desired width for the gap
+        gapWidget.setObjectName(name.title().replace(' ', '')+'Gap')
+        self.verticalLayout.addWidget(gapWidget, 5)
 
     def init_status(self):
         self.WORKING = False
