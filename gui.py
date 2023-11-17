@@ -56,7 +56,7 @@ class VideoThread(QThread):
     def run(self):
         frame_idx = 0
         # capture from web cam
-        cap = cv2.VideoCapture("dataset/Case_D.MP4")  # TODO: Camera input
+        cap = cv2.VideoCapture("dataset/Case_D.MP4")
         # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 
         # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
@@ -66,7 +66,7 @@ class VideoThread(QThread):
                 frame_idx += 1
                 ret, cv_img = cap.read()
                 # print(ret)
-                time.sleep(0.1)  # TODO: removing sleep for camera
+                time.sleep(0.1)
                 if ret:
                     # print(cv_img)
 
@@ -90,7 +90,7 @@ class Ui_iPhaser(QMainWindow):
         self.resize(1825, 1175)
         self.setMinimumHeight(965)
         self.setMinimumWidth(965)
-        self.setStyleSheet("QWidget#iPhaser{background-color: #121212}")
+        self.setStyleSheet("QWidget#iPhaser{background-color: black}")
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         old_pos = self.frameGeometry().getRect()
         curr_x = old_pos[2]
@@ -156,7 +156,7 @@ class Ui_iPhaser(QMainWindow):
         self.DisplayVideo = QtWidgets.QLabel(self.centralwidget)
         self.DisplayVideo.setGeometry(QtCore.QRect(500, 250, curr_x - 25 - 500, curr_y - 65 - 250))
         self.DisplayVideo.setScaledContents(True)
-        # self.DisplayVideo.setStyleSheet("background-color: rgb(197, 197, 197);")
+        self.DisplayVideo.setStyleSheet("background-color: black;")
         self.DisplayVideo.setText("")
         self.DisplayVideo.setObjectName("DisplayVideo")
         size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -166,7 +166,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.phaseseg = PhaseCom(arg=cfg)
         self.video = False
-        self.disply_width = 1080  # TODO: Change resFRAME_WIDTHolutions
+        self.disply_width = 1080
         self.display_height = 720
         self.start_x = 0
         self.end_x = 450
@@ -229,13 +229,13 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton.clicked.connect(self.onButtonClickStop)
 
         self.layoutWidget = QtWidgets.QWidget(self)
-        self.layoutWidget.setGeometry(QtCore.QRect(30, 20, 440, 870))
+        self.layoutWidget.setGeometry(QtCore.QRect(30, 20, 440, 675))
         self.layoutWidget.setObjectName("layoutWidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.verticalLayout.setObjectName("verticalLayout")
 
         self.layoutWidget1 = QtWidgets.QWidget(self)
-        self.layoutWidget1.setGeometry(QtCore.QRect(800, 30, 540, 225))
+        self.layoutWidget1.setGeometry(QtCore.QRect(800, 20, 640, 225))
         self.layoutWidget.setObjectName("layoutWidget1")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.layoutWidget1)
         self.horizontalLayout.setObjectName("horizontalLayout")
@@ -259,7 +259,7 @@ class Ui_iPhaser(QMainWindow):
             self.setVLayout(i, Vpercent)
 
         self.imageLabel = QtWidgets.QLabel(self.centralwidget)
-        self.imageLabel.setGeometry(QtCore.QRect(0, 0, 350, 350))  # Set initial size and position
+        self.imageLabel.setGeometry(QtCore.QRect(0, 0, 400, 400))  # Set initial size and position
         self.imageLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)  # Align to the left bottom corner
         self.imageLabel.setObjectName("CUHK_logol")
         # Set the size policy of the image label to Ignored
@@ -327,7 +327,6 @@ class Ui_iPhaser(QMainWindow):
         """Convert from an opencv image to QPixmap"""
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
-
         rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
         self.manual_frame = self.manual_frame - 1
         if self.manual_frame <= 0:
@@ -347,12 +346,14 @@ class Ui_iPhaser(QMainWindow):
             # print('write', rgb_image.shape)
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             rbg_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+            # TODO: 目前text是overlay到rgb圖像后，再利用下面的setPixmap更新顯示的video，但是非常耗時，看看這段能不能優化。正常情況下
+            # TODO: 顯示video應該是很快的（見tem.py例子），而且模型處理的時間應該也很短，不會造成明顯的延遲。self.phaseseg.phase_frame(rgb_image)
             rgb_image = self.phaseseg.add_text(self.date_time, self.pred, self.trainee_name, rgb_image)
-            self.output_video.write(rbg_image)
+            # self.output_video.write(rbg_image)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(),  Qt.KeepAspectRatio)  # TODO: Change size of display
+        p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(),  Qt.KeepAspectRatio)
         p = QPixmap.fromImage(p)
         # print('done')
         # print(self.INIT)
@@ -368,7 +369,7 @@ class Ui_iPhaser(QMainWindow):
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S.%f")
             start_time = time.time()
             import torch
-            self.pred, self.prob, index = self.phaseseg.phase_frame(rgb_image)
+            self.pred, self.prob, index = self.phaseseg.phase_frame(rgb_image)  # TODO:可以用time查看該語句的延遲時間
             for key, val in self.states.items():
                 val.setChecked(False)
             self.phase1_prob.setValue(int(self.prob[0] * 100))
@@ -970,7 +971,7 @@ class Ui_iPhaser(QMainWindow):
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        self.setWindowTitle(_translate("iPhaser", "iPhaser"))
+        self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
         capture = cv2.VideoCapture(0)  # TODO: change camera

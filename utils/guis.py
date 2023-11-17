@@ -211,7 +211,7 @@ class PhaseCom(object):
     
     def seg_frame(self, frame):
         start_time = time.time()
-        frame = cv2.resize(frame, (224, 224))  # TODO: mask out background of Endoscopy
+        frame = cv2.resize(frame, (224, 224))
         frame = self.aug(image=frame)["image"]
         with torch.no_grad():
             frame = np.expand_dims(np.transpose(frame, [2, 0, 1]), axis=0)
@@ -300,9 +300,9 @@ class PhaseCom(object):
     def add_text(self, fc, results, fps, frame):
 
         w, h, c = frame.shape
-        cv2.putText(frame, "   Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (30, 45),  cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 4)
-        cv2.putText(frame, "  Phase: {:<15s}".format(results), (30, 85),  cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 4)
-        cv2.putText(frame, " Trainee: {:<15s}".format(fps), (30, 125),  cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 4)
+        cv2.putText(frame, "   Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (30, 20),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        cv2.putText(frame, "  Phase: {:<15s}".format(results), (30, 35),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        cv2.putText(frame, " Trainee: {:<15s}".format(fps), (30, 50),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
         # cv2.putText(frame, " Blood vessel".format(fps), (140, w - 40),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
         # cv2.putText(frame, " Muscularis".format(fps), (140, w - 80),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)

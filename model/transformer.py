@@ -229,7 +229,7 @@ class Transformer(nn.Module):
 
         feas = torch.tanh(self.fc(long_feature))  # .transpose(0, 1))  # Project the input to desired dimension
         out_feas = []
-        spa_len = 1  # TODO: Ablation study for long short term memory
+        spa_len = 1
         for i in range(feas.size(1)):
             if i < spa_len - 1:
                 input0 = torch.zeros((bs, spa_len - 1 - i, 32)).cuda()
