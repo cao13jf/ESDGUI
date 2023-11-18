@@ -73,7 +73,7 @@ class ImageProcessingThread(QThread):
         self.end_y = end_y
         self.frames_to_process = []
         self.phaseseg = PhaseCom(arg=cfg)
-        self.processing_interval = 5
+        self.processing_interval = 2
 
     def run(self):
         while True:
@@ -88,7 +88,7 @@ class ImageProcessingThread(QThread):
         rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
         pred = self.phaseseg.phase_frame(rgb_image)  # TODO:可以用time查看該語句的延遲時間
 
-        return pred, img
+        return pred
 
 
     def add_frame(self, frame):
@@ -311,7 +311,7 @@ class Ui_iPhaser(QMainWindow):
                                                        start_y=self.start_y,
                                                        end_y=self.end_y,
                                                        cfg=cfg)
-        self.processing_thread.processed_frame.connect(self.display_processed_frame)
+        self.processing_thread.processed_frame.connect(self.update_pred)
         self.processing_thread.moveToThread(QCoreApplication.instance().thread())
         self.processing_thread.start()
 
@@ -351,6 +351,7 @@ class Ui_iPhaser(QMainWindow):
         if ret:
             if self.WORKING:
                 self.processing_thread.add_frame(frame)
+                self.display_frame(frame)
             else:
                 self.display_frame(frame)
 
@@ -378,29 +379,21 @@ class Ui_iPhaser(QMainWindow):
         p = QPixmap.fromImage(p)
         self.DisplayVideo.setPixmap(p)
 
-    def display_processed_frame(self, pred, frame):
+    def update_pred(self, pred):
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
         self.pred = self.index2phase[pred_index]
-        if self.manual_frame <= 0:
-            self.manual_frame = 0
-            self.manual_set = "--"
-        if self.INIT:
-            self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
-            if self.manual_frame > 0:
-                self.pred = self.manual_set
-            frame = add_text(self.date_time, self.pred, self.trainee_name, frame)
-        if self.WORKING:
-            # print('write', rgb_image.shape)
-            self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
-            frame = add_text(self.date_time, self.pred, self.trainee_name, frame)
-            # self.output_video.write(rbg_image)
-        h, w, ch = frame.shape
-        bytes_per_line = ch * w
-        convert_to_Qt_format = QtGui.QImage(frame.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(),  Qt.KeepAspectRatio)
-        p = QPixmap.fromImage(p)
-        self.DisplayVideo.setPixmap(p)
+        pred_percentages = ((np.exp(pred)/np.exp(pred).sum()) * 100).tolist()
+        self.phase1_prob.setValue(pred_percentages[0])
+        self.phase2_prob.setValue(pred_percentages[1])
+        self.phase3_prob.setValue(pred_percentages[2])
+        self.phase4_prob.setValue(pred_percentages[3])
+        states = [False] * 4
+        states[pred_index] = True
+        self.phase1_state.setChecked(states[0])
+        self.phase2_state.setChecked(states[1])
+        self.phase3_state.setChecked(states[2])
+        self.phase4_state.setChecked(states[3])
 
     def onButtonClickStart(self):
         self.startButton.setStyleSheet("background-color: green;")
