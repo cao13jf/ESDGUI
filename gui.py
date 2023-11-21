@@ -20,6 +20,7 @@ import random
 from utils.guis import PhaseCom, draw_segmentation, add_text
 from utils.parser import ParserUse
 from utils.gui_parts import *
+from utils.report_tools import generate_report
 from canvas import Canvas
 
 warnings.filterwarnings("ignore")
@@ -115,7 +116,7 @@ class Ui_iPhaser(QMainWindow):
         self.cbFlag = 0
         self.size = QSize(curr_x - 25 - 500, curr_y - 65 - 250)
         self.old_pos = self.frameGeometry().getRect()
-        self.save_folder = "./Records"
+        self.save_folder = "../Records"
         if not os.path.isdir(self.save_folder):
             os.makedirs(self.save_folder)
         self.down_ratio = 1  # cfg.down_ratio
@@ -159,7 +160,7 @@ class Ui_iPhaser(QMainWindow):
         self.ru = 0
         self.aaa = 0
         self.bbb = 0
-        self.index2phase = {0: "Idle", 1: "Marking", 2: "Injection", 3: "Dissection"}
+        self.index2phase = {0: "idle", 1: "marking", 2: "injection", 3: "dissection"}
         self.centralwidget = QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.resizeEvent = self.windowResized
@@ -188,14 +189,13 @@ class Ui_iPhaser(QMainWindow):
         # self.start_y = 450
         self.end_y = 450
         # cv_img[0:1150, 450:1800]
-        self.save_folder = os.path.join(os.getcwd(), "Records")
+        self.save_folder = os.path.join("../Records")
         if not os.path.isdir(self.save_folder):
             os.makedirs(self.save_folder)
         self.down_ratio = 1  # cfg.down_ratio
         self.start_time = "--:--:--"
         self.trainee_name = "--"
         self.manual_set = "--"
-        self.thread = None
         # model prediction
         # self.centralwidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.setCentralWidget(self.usbVideo)
@@ -223,7 +223,7 @@ class Ui_iPhaser(QMainWindow):
         self.startButton = QPushButton(self)
         # self.startButton.setFont(QFont("Arial",12, QFont.Bold))
         self.startButton.setGeometry(QtCore.QRect(self.width() - 300, 100, 80, 80))
-        self.startButton.setStyleSheet("background-color:#757575;")
+        self.startButton.setStyleSheet("background-color: DarkGreen;")
         self.startButton.setObjectName('StartButton')
         self.start_pixmap = QtGui.QIcon()
         self.start_pixmap.addFile("./images/start.png", QtCore.QSize(80, 80), QtGui.QIcon.Active, QtGui.QIcon.On)
@@ -234,7 +234,7 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton = QPushButton(self)
         # self.stopButton.setFont(QFont("Arial",12, QFont.Bold))
         self.stopButton.setGeometry(QtCore.QRect(self.width() - 200, 100, 80, 80))
-        self.stopButton.setStyleSheet("background-color:#757575;")
+        self.stopButton.setStyleSheet("background-color:DarkGrey;")
         self.stopButton.setObjectName('StopButton')
         self.stop_pixmap = QtGui.QIcon()
         self.stop_pixmap.addFile("./images/stop.png", QtCore.QSize(80, 80), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -365,12 +365,12 @@ class Ui_iPhaser(QMainWindow):
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             if self.manual_frame > 0:
                 self.pred = self.manual_set
-            rgb_image = add_text(self.date_time, self.pred, self.trainee_name, rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
         if self.WORKING:
             # print('write', rgb_image.shape)
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             rbg_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-            rgb_image = add_text(self.date_time, self.pred, self.trainee_name, rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
             # self.output_video.write(rbg_image)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
@@ -382,7 +382,11 @@ class Ui_iPhaser(QMainWindow):
     def update_pred(self, pred):
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
+        prob = np.exp(pred) / sum(np.exp(pred))
         self.pred = self.index2phase[pred_index]
+        add_log = [datetime.datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
+        add_log += prob.tolist()
+        self.log_data.append(add_log)
         pred_percentages = ((np.exp(pred)/np.exp(pred).sum()) * 100).tolist()
         self.phase1_prob.setValue(pred_percentages[0])
         self.phase2_prob.setValue(pred_percentages[1])
@@ -396,24 +400,56 @@ class Ui_iPhaser(QMainWindow):
         self.phase4_state.setChecked(states[3])
 
     def onButtonClickStart(self):
-        self.startButton.setStyleSheet("background-color: green;")
-        self.stopButton.setStyleSheet("background-color: #757575;")
+        self.startButton.setStyleSheet("background-color: DarkGrey;")
+        self.startButton.setEnabled(False)
+        self.stopButton.setStyleSheet("background-color: DarkGreen;")
+        self.stopButton.setEnabled(True)
         self.canvas.clear()
         self.flag = True
         self.WORKING = True
-        self.video = True
-        video_file_name = os.path.join(self.save_folder, self.e1.text().replace(":", "_").replace(" ",
-                                                                                                  "-") + "_" + self.start_time.replace(
-            ":", "-") + ".avi")
-        self.output_video = cv2.VideoWriter(video_file_name, self.CODEC, self.stream_fps,
-                                            (self.FRAME_WIDTH, self.FRAME_HEIGHT))
+        self.video = False
+        # video_file_name = os.path.join(self.save_folder, self.e1.text().replace(":", "_").replace(" ",
+        #                                                                                           "-") + "_" + self.start_time.replace(
+        #     ":", "-") + ".avi")
+        # self.output_video = cv2.VideoWriter(video_file_name, self.CODEC, self.stream_fps,
+        #                                     (self.FRAME_WIDTH, self.FRAME_HEIGHT))
+        self.start_time = datetime.datetime.now().strftime("%H:%M:%S")
+        self.log_file = os.path.join(self.save_folder, self.trainee.text() + "_" + self.start_time.replace(":",
+                                                                                                              "-") + ".csv")
         self.startTime = datetime.datetime.now()
         lineEdits = self.trainLabel.findChildren(QLineEdit)
         for lineEdit in lineEdits:
-            if lineEdit.objectName() == 'MentorInput':
+            if lineEdit.objectName() == 'TraineeInput':
                 if self.surgeons.findText(lineEdit.text()) == -1 and lineEdit.text() != '':
                     self.surgeons.addItem(lineEdit.text())
                     self.surgeons.setCurrentIndex(-1)
+
+
+    def onButtonClickStop(self):
+        self.startButton.setStyleSheet("background-color: DarkGreen;")
+        self.startButton.setEnabled(True)
+        self.stopButton.setStyleSheet("background-color: DarkGrey;")
+        self.stopButton.setEnabled(False)
+        self.flag = False
+        self.WORKING = False
+        # self.video = False
+        # self.output_video.release()
+        # self.thread.terminate()
+        # self.thread.wait(1)
+
+        self.pred = "--"
+        self.init_status()
+        self.save_log_data()
+        # self.DisplayTrainee.setText("--")
+
+    def init_status(self):
+        self.WORKING = False
+        self.INIT = False
+        self.TRAINEE = "NONE"
+        self.PAUSE_times = 0
+        self.INDEPENDENT = True
+        self.HELP = False
+        self.STATUS = "--"
 
     def pick_color(self):
         color = QColorDialog.getColor()
@@ -424,16 +460,6 @@ class Ui_iPhaser(QMainWindow):
             self.color.insert(idx, color)
             label = self.findChild(QLabel, f"Object{idx + 1}")
             label.setStyleSheet(f"background-color: {color.name()}")
-
-    def onButtonClickStop(self):
-        self.startButton.setStyleSheet("background-color: #757575;")
-        self.stopButton.setStyleSheet("background-color: green;")
-        self.flag = False
-        self.WORKING = False
-        self.video = False
-        self.output_video.release()
-        self.thread.terminate()
-        self.thread.wait(1)
 
     def resizeEvent(self, event):
         old_pos = self.frameGeometry().getRect()
@@ -458,13 +484,17 @@ class Ui_iPhaser(QMainWindow):
         e3.setObjectName("MentorInput")
         e3.setStyleSheet("background-color: white;color:black")
         e3.setFont(QFont("Arial", 14))
+        e3.setText("Jeffery")
         e3.setAlignment(Qt.AlignCenter)
+        self.mentor = e3
         e4 = QLineEdit()
         e4.setFixedHeight(35)
         e4.setObjectName("LesionLocationInput")
         e4.setStyleSheet("background-color: white;color:black")
         e4.setFont(QFont("Arial", 14))
+        e4.setText("Stomach")
         e4.setAlignment(Qt.AlignCenter)
+        self.lesion = e4
         e5 = QLabel("Trainee:")
         e5.setObjectName("Trainee")
         e5.setFont(QFont("Arial", 16, QFont.Bold))
@@ -478,22 +508,26 @@ class Ui_iPhaser(QMainWindow):
         e7.setObjectName("TraineeInput")
         e7.setStyleSheet("background-color: white;color:black")
         e7.setFont(QFont("Arial", 14))
+        e7.setText("John")
         e7.setAlignment(Qt.AlignCenter)
+        self.trainee = e7
         e8 = QLineEdit()
         e8.setFixedHeight(35)
         e8.setObjectName("BedInput")
         e8.setStyleSheet("background-color: white;color:black")
         e8.setFont(QFont("Arial", 14))
+        e8.setText("1")
         e8.setAlignment(Qt.AlignCenter)
+        self.bed = e8
         e = QGridLayout()
         e.addWidget(e1, 0, 0)
         e.addWidget(e2, 0, 1)
-        e.addWidget(e3, 1, 0)
-        e.addWidget(e4, 1, 1)
+        e.addWidget(self.mentor, 1, 0)
+        e.addWidget(self.lesion, 1, 1)
         e.addWidget(e5, 2, 0)
         e.addWidget(e6, 2, 1)
-        e.addWidget(e7, 3, 0)
-        e.addWidget(e8, 3, 1)
+        e.addWidget(self.trainee, 3, 0)
+        e.addWidget(self.bed, 3, 1)
         self.trainLabel.setLayout(e)
 
     def load_image(self):
@@ -638,6 +672,7 @@ class Ui_iPhaser(QMainWindow):
         e2.setStyleSheet("background: white;border-radius:5px;color: black")
         e2.setAlignment(Qt.AlignCenter)
         e2.setFont(QFont("Arial", 14))
+        e2.setText("Jenny")
         hlayout.addWidget(e2)
         e3 = QFrame()
         e3.setFrameShape(QFrame.HLine)
@@ -652,6 +687,7 @@ class Ui_iPhaser(QMainWindow):
         e4.setStyleSheet("background: white;border-radius:5px;color:black")
         e4.setAlignment(Qt.AlignCenter)
         e4.setFont(QFont("Arial", 14))
+        e4.setText("798xxx(x)")
         hlayout.addWidget(e4)
         hlayout.setSpacing(15)
         vlayout.addLayout(hlayout)
@@ -668,6 +704,7 @@ class Ui_iPhaser(QMainWindow):
         e6.setStyleSheet("background-color: white;border-radius:5px;color:black")
         e6.setAlignment(Qt.AlignCenter)
         e6.setFont(QFont("Arial", 14))
+        e6.setText("2023")
         hlayout1.addWidget(e6)
         e7 = QFrame()
         e7.setFrameShape(QFrame.HLine)
@@ -678,10 +715,11 @@ class Ui_iPhaser(QMainWindow):
         e8 = QLineEdit()
         e8.setFixedHeight(35)
         e8.setFixedWidth(105)
-        e8.setObjectName("PIDDateYear")
+        e8.setObjectName("PIDDateMonth")
         e8.setStyleSheet("background-color: white;border-radius:5px;color:black")
         e8.setAlignment(Qt.AlignCenter)
         e8.setFont(QFont("Arial", 14))
+        e8.setText("Nov")
         hlayout1.addWidget(e8)
         e9 = QFrame()
         e9.setFrameShape(QFrame.HLine)
@@ -696,6 +734,7 @@ class Ui_iPhaser(QMainWindow):
         e10.setStyleSheet("background-color: white;border-radius:5px;color: black")
         e10.setAlignment(Qt.AlignCenter)
         e10.setFont(QFont("Arial", 14))
+        e10.setText("10")
         hlayout1.addWidget(e10)
         hlayout1.setSpacing(15)
         vlayout.addLayout(hlayout1)
@@ -826,7 +865,11 @@ class Ui_iPhaser(QMainWindow):
             self.duraSecond.setText('{:02d}'.format(second))
 
     def generateReport(self):
-        print("66666")
+        self.reportButton.setEnabled(False)
+        report_path = generate_report("../Records")
+        fullpath = os.path.realpath("./reports")
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(fullpath))
+        self.reportButton.setEnabled(True)
 
     def setupSummary(self):
         num_widget = self.verticalLayout.count()
@@ -966,15 +1009,6 @@ class Ui_iPhaser(QMainWindow):
         gapWidget.setObjectName(name.title().replace(' ', '')+'Gap')
         self.verticalLayout.addWidget(gapWidget, 5)
 
-    def init_status(self):
-        self.WORKING = False
-        self.INIT = False
-        self.TRAINEE = "NONE"
-        self.PAUSE_times = 0
-        self.INDEPENDENT = True
-        self.HELP = False
-        self.STATUS = "--"
-
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
@@ -989,6 +1023,17 @@ class Ui_iPhaser(QMainWindow):
         fps = 30
         capture.release()
         return frame_width, frame_height, fps
+
+    def save_log_data(self):
+        datas = zip(*self.log_data)
+        data_dict = {}
+        # [datetime.datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
+        names = ["Time", "Trainee", "Trainer", "Bed", "Prediction", "Phase idle", "Phase marking", "Phase injection", "Phase dissection"]
+        for name, data in zip(names, datas):
+            data_dict[name] = list(data)
+        pd_log = pd.DataFrame.from_dict(data_dict)
+        curent_date_time = "_" + datetime.datetime.now().strftime("%H-%M-%S") + ".csv"
+        pd_log.to_csv(self.log_file.replace(".csv", curent_date_time), index=False, header=True)
 
 
 if __name__ == "__main__":
