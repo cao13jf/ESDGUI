@@ -427,19 +427,29 @@ class Ui_iPhaser(QMainWindow):
         self.imageLabel = QtWidgets.QLabel(self.centralwidget)
         self.imageLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)  # Align to the left bottom corner
         self.imageLabel.setObjectName("CUHK_logol")
-        # Set the size policy of the image label to Ignored
         self.imageLabel.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
-
         # Load the image
         image_path = "images/CUHK_logol.png"  # Replace with the actual path to your image
         image = QtGui.QPixmap(image_path)
-
         # Resize the image to fit within the available space while maintaining the aspect ratio
         scaled_image = image.scaled(125, 100)
-
         # Set the scaled image as the pixmap for the image label
         self.imageLabel.setPixmap(scaled_image)
+        # Adjust the position and size of the image label when the main window is resized
+        self.centralwidget.resizeEvent = self.windowResized
 
+        self.AiEndoLabel = QtWidgets.QLabel(self.centralwidget)
+        self.AiEndoLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)  # Align to the left bottom corner
+        self.AiEndoLabel.setObjectName("AiEndoLabel")
+        # Set the size policy of the image label to Ignored
+        self.AiEndoLabel.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        # Load the image
+        AiEndo_image_path = "images/AI-Endo.jpg"  # Replace with the actual path to your image
+        Ai_Endo_image = QtGui.QPixmap(AiEndo_image_path)
+        # Resize the image to fit within the available space while maintaining the aspect ratio
+        scaled_Ai_Endo_Image = Ai_Endo_image.scaled(100, 100)
+        # Set the scaled image as the pixmap for the image label
+        self.AiEndoLabel.setPixmap(scaled_Ai_Endo_Image)
         # Adjust the position and size of the image label when the main window is resized
         self.centralwidget.resizeEvent = self.windowResized
 
@@ -491,6 +501,7 @@ class Ui_iPhaser(QMainWindow):
 
         # Set the new geometry of the image label
         self.imageLabel.setGeometry(QtCore.QRect(imageX, imageY, imageWidth, imageHeight))
+        self.AiEndoLabel.setGeometry(QtCore.QRect(imageX+175, imageY, imageWidth, imageHeight))
 
         self.startButton.setGeometry(QtCore.QRect(650, self.height() - 150, 80, 80))
         self.stopButton.setGeometry(QtCore.QRect(750, self.height() - 150, 80, 80))
