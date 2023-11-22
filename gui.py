@@ -63,6 +63,7 @@ def add_text(fc, results, fps, frame):
 
     return frame
 
+
 class ImageProcessingThread(QThread):
     processed_frame = pyqtSignal(np.ndarray)
 
@@ -91,7 +92,6 @@ class ImageProcessingThread(QThread):
 
         return pred
 
-
     def add_frame(self, frame):
         self.frames_to_process.append(frame)
 
@@ -105,7 +105,7 @@ class Ui_iPhaser(QMainWindow):
         self.resize(1825, 1175)
         self.setMinimumHeight(965)
         self.setMinimumWidth(965)
-        self.setStyleSheet("QWidget#iPhaser{background-color: #212121}")
+        self.setStyleSheet("QWidget#iPhaser{background-color: rgb(28, 69, 135)}")
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         old_pos = self.frameGeometry().getRect()
         curr_x = old_pos[2]
@@ -122,7 +122,7 @@ class Ui_iPhaser(QMainWindow):
         self.down_ratio = 1  # cfg.down_ratio
         # Statue parameters
         self.init_status()
-        Vblocks = ['case information', 'phase recognition', 'summary report']
+        Vblocks = ['case information', 'phase recognition', 'online analytics']
         Hblocks = ['training session']
         self.FRAME_WIDTH, self.FRAME_HEIGHT, self.stream_fps = self.get_frame_size()
         self.MANUAL_FRAMES = self.stream_fps * cfg.manual_set_fps_ratio
@@ -170,15 +170,12 @@ class Ui_iPhaser(QMainWindow):
         # self.usbVideo.setGeometry(QtCore.QRect(500, 250, curr_x-25-500, curr_y-65-250))
         # newly added
         self.DisplayVideo = QtWidgets.QLabel(self.centralwidget)
-        self.DisplayVideo.setGeometry(QtCore.QRect(500, 250, curr_x - 25 - 500, curr_y - 65 - 250))
         self.DisplayVideo.setScaledContents(True)
         self.DisplayVideo.setStyleSheet("background-color: black;")
         self.DisplayVideo.setText("")
         self.DisplayVideo.setObjectName("DisplayVideo")
         size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.DisplayVideo.setSizePolicy(size_policy)
-
-
 
         self.video = False
         self.disply_width = 1080
@@ -222,7 +219,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.startButton = QPushButton(self)
         # self.startButton.setFont(QFont("Arial",12, QFont.Bold))
-        self.startButton.setGeometry(QtCore.QRect(self.width() - 300, 100, 80, 80))
+        self.startButton.setGeometry(QtCore.QRect(500, self.height() - 200, 80, 80))
         self.startButton.setStyleSheet("background-color: DarkGreen;")
         self.startButton.setObjectName('StartButton')
         self.start_pixmap = QtGui.QIcon()
@@ -233,7 +230,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.stopButton = QPushButton(self)
         # self.stopButton.setFont(QFont("Arial",12, QFont.Bold))
-        self.stopButton.setGeometry(QtCore.QRect(self.width() - 200, 100, 80, 80))
+        self.stopButton.setGeometry(QtCore.QRect(600, self.height() - 200, 80, 80))
         self.stopButton.setStyleSheet("background-color:DarkGrey;")
         self.stopButton.setObjectName('StopButton')
         self.stop_pixmap = QtGui.QIcon()
@@ -243,16 +240,22 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton.clicked.connect(self.onButtonClickStop)
 
         self.layoutWidget = QtWidgets.QWidget(self)
-        self.layoutWidget.setGeometry(QtCore.QRect(30, 20, 440, 800))
+        self.layoutWidget.setGeometry(QtCore.QRect(30, 20, 440, 1000))
         self.layoutWidget.setObjectName("layoutWidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.layoutWidget)
         self.verticalLayout.setObjectName("verticalLayout")
 
         self.layoutWidget1 = QtWidgets.QWidget(self)
-        self.layoutWidget1.setGeometry(QtCore.QRect(800, 20, 640, 225))
+        self.layoutWidget1.setGeometry(QtCore.QRect(500, 20, 440, 225))
         self.layoutWidget.setObjectName("layoutWidget1")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.layoutWidget1)
-        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.verticalLayout1 = QtWidgets.QHBoxLayout(self.layoutWidget1)
+        self.verticalLayout1.setObjectName("verticalLayout1")
+
+        self.layoutWidget2 = QtWidgets.QWidget(self)
+        self.layoutWidget2.setGeometry(QtCore.QRect(500, 270, 440, 700))
+        self.layoutWidget.setObjectName("layoutWidget2")
+        self.verticalLayout2 = QtWidgets.QHBoxLayout(self.layoutWidget2)
+        self.verticalLayout2.setObjectName("verticalLayout2")
 
         self.VLayout1 = QtWidgets.QVBoxLayout()
         self.VLayout1.setObjectName("VLayout1")
@@ -264,16 +267,164 @@ class Ui_iPhaser(QMainWindow):
         self.trainLabel = QtWidgets.QWidget()
         self.trainLabel.setObjectName("TrainLabel")
         self.trainLabel.setAttribute(Qt.WA_StyledBackground, True)
-        self.trainLabel.setStyleSheet("background-color: #757575; border-radius:5px")
+        self.trainLabel.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
         self.VLayout1.addWidget(self.trainLabel, 84)
-        self.horizontalLayout.addLayout(self.VLayout1)
+        self.verticalLayout1.addLayout(self.VLayout1)
+
+        # start of new summary report
+        egrid = QGridLayout()
+        group1 = QGroupBox()
+        group1.setObjectName("DurationGroup")
+        group1.setStyleSheet("QGroupBox#DurationGroup{border:0;}")
+        hbox = QHBoxLayout()
+        hbox.setObjectName("DurationLayout")
+        e1 = QLabel("Duration:")
+        e1.setObjectName("Duration")
+        e1.setFont(QFont("Arial", 16, QFont.Bold))
+        e1.setStyleSheet("color: white;")
+        self.flag = False
+        self.Timer = QtCore.QTimer()
+        self.Timer.timeout.connect(self.countTime)
+        self.Timer.start(1)
+        self.hour = 0
+        self.minute = 0
+        self.second = 0
+        e2 = QLabel('{:02d}'.format(self.hour))
+        e2.setAlignment(Qt.AlignCenter)
+        e2.setObjectName("DurationHour")
+        e2.setFont(QFont("Arial", 16, QFont.Bold))
+        e2.setStyleSheet("background-color: white;")
+        self.duraHour = e2
+        e3 = QLabel("hrs:")
+        e3.setObjectName("DurationHourUnit")
+        e3.setFont(QFont("Arial", 16, QFont.Bold))
+        e3.setStyleSheet("color: white;")
+        e4 = QLabel('{:02d}'.format(self.minute))
+        e4.setAlignment(Qt.AlignCenter)
+        e4.setObjectName("DurationMinute")
+        e4.setFont(QFont("Arial", 16, QFont.Bold))
+        e4.setStyleSheet("background-color: white;")
+        self.duraMinute = e4
+        e5 = QLabel("min:")
+        e5.setObjectName("DurationMinuteUnit")
+        e5.setFont(QFont("Arial", 16, QFont.Bold))
+        e5.setStyleSheet("color: white;")
+        e6 = QLabel('{:02d}'.format(self.second))
+        e6.setAlignment(Qt.AlignCenter)
+        e6.setObjectName("DurationSecond")
+        e6.setFont(QFont("Arial", 16, QFont.Bold))
+        e6.setStyleSheet("background-color: white;")
+        self.duraSecond = e6
+        e7 = QLabel("sec")
+        e7.setObjectName("DurationSecondUnit")
+        e7.setFont(QFont("Arial", 16, QFont.Bold))
+        e7.setStyleSheet("color: white;")
+        hbox.addWidget(e1)
+        hbox.addWidget(e2)
+        hbox.addWidget(e3)
+        hbox.addWidget(e4)
+        hbox.addWidget(e5)
+        hbox.addWidget(e6)
+        hbox.addWidget(e7)
+        hbox.setSpacing(5)
+        group1.setLayout(hbox)
+        group2 = QGroupBox()
+        group2.setObjectName("SurgeonsGroup")
+        group2.setStyleSheet("QGroupBox#SurgeonsGroup{border:0;}")
+        hbox_1 = QHBoxLayout()
+        hbox_1.setObjectName("SurgeonsLayout")
+        e8 = QLabel("Surgeons:")
+        e8.setObjectName("Surgeons")
+        e8.setFont(QFont("Arial", 16, QFont.Bold))
+        e8.setStyleSheet("color: white;")
+        # e9.setAlignment(Qt.AlignCenter)
+        e10 = QLabel()
+        hbox_1.addWidget(e8)
+        hbox_1.addWidget(self.surgeons)
+        hbox_1.addWidget(e10)
+        hbox_1.setSpacing(10)
+        # hbox_1.setAlignment(Qt.AlignLeft)
+        group2.setLayout(hbox_1)
+        group2.setAlignment(Qt.AlignLeft)
+        group3 = QGroupBox()
+        group3.setObjectName("ReportGroup")
+        group3.setStyleSheet("QGroupBox#ReportGroup{border:0;}")
+        hbox_2 = QHBoxLayout()
+        hbox_2.setObjectName("ReportLayout")
+        self.reportButton = QPushButton("Generate Report")
+        self.reportButton.setObjectName("ReportButton")
+        self.reportButton.setFont(QFont("Arial", 16))
+        self.reportButton.setStyleSheet("QPushButton"
+                                        "{"
+                                        "background-color: green;"
+                                        "color: white;"
+                                        "padding: 5px 15px;"
+                                        "margin-top: 10px;"
+                                        "outline: 1px;"
+                                        "min-width: 8em;"
+                                        "}")
+        self.reportButton.clicked.connect(self.generateReport)
+        hbox_2.addWidget(self.reportButton)
+        hbox_2.setAlignment(Qt.AlignCenter)
+        group3.setLayout(hbox_2)
+        egrid.addWidget(group1, 0, 0)
+        egrid.addWidget(group2, 1, 0)
+        egrid.addWidget(group3, 2, 0)
+        self.VLayout2 = QtWidgets.QVBoxLayout()
+        self.VLayout2.setObjectName("VLayout2")
+        self.summaryReportTitle = QtWidgets.QLabel('Summary report')
+        self.summaryReportTitle.setObjectName("SummaryReportTitle")
+        self.summaryReportTitle.setStyleSheet("color:white;")
+        self.summaryReportTitle.setFont(QFont("Arial", 18, QFont.Bold))
+        self.VLayout2.addWidget(self.summaryReportTitle, 16)
+        self.summaryReport = QtWidgets.QWidget()
+        self.summaryReport.setObjectName("summaryReport")
+        self.summaryReport.setAttribute(Qt.WA_StyledBackground, True)
+        self.layoutWidget2.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
+        self.summaryReport.setLayout(egrid)
+        self.VLayout2.addWidget(self.summaryReport, 84)
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setStyleSheet("background-color: black;")
+
+        self.summaryReportOutput1 = QLabel()
+        self.summaryReportOutput1.setStyleSheet("background-color: white;")
+        self.summaryReportOutput1.setFixedSize(400, 200)
+
+        self.summaryReportOutput2 = QLabel()
+        self.summaryReportOutput2.setStyleSheet("background-color: white;")
+        self.summaryReportOutput2.setFixedSize(400, 200)
+
+        self.fullReportButton = QPushButton("Get Full Report")
+        self.fullReportButton.setObjectName("FullReportButton")
+        self.fullReportButton.setFont(QFont("Arial", 16))
+        self.fullReportButton.setStyleSheet("QPushButton"
+                                            "{"
+                                            "background-color: green;"
+                                            "color: white;"
+                                            "padding: 5px 15px;"
+                                            "margin-top: 10px;"
+                                            "outline: 1px;"
+                                            "min-width: 8em;"
+                                            "}")
+        self.fullReportButton.setFixedSize(200, 50)
+        self.fullReportButton.clicked.connect(self.generateReport)
+
+        self.VLayout2.addWidget(line)
+        self.VLayout2.addWidget(self.summaryReportOutput1, alignment=Qt.AlignCenter)
+        self.VLayout2.addWidget(self.summaryReportOutput2, alignment=Qt.AlignCenter)
+        self.VLayout2.addWidget(self.fullReportButton, alignment=Qt.AlignCenter)
+
+        self.verticalLayout2.addLayout(self.VLayout2)
+
+        # end of new summary report
 
         Vpercent = 100 / len(Vblocks)
         for i in Vblocks:
             self.setVLayout(i, Vpercent)
 
         self.imageLabel = QtWidgets.QLabel(self.centralwidget)
-        self.imageLabel.setGeometry(QtCore.QRect(0, 0, 400, 400))  # Set initial size and position
         self.imageLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)  # Align to the left bottom corner
         self.imageLabel.setObjectName("CUHK_logol")
         # Set the size policy of the image label to Ignored
@@ -284,7 +435,7 @@ class Ui_iPhaser(QMainWindow):
         image = QtGui.QPixmap(image_path)
 
         # Resize the image to fit within the available space while maintaining the aspect ratio
-        scaled_image = image.scaled(self.imageLabel.size(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        scaled_image = image.scaled(125, 100)
 
         # Set the scaled image as the pixmap for the image label
         self.imageLabel.setPixmap(scaled_image)
@@ -295,7 +446,7 @@ class Ui_iPhaser(QMainWindow):
         self.setupCaseInformation()
         self.setupTrainer()
         self.setupPhaseRecog()
-        self.setupSummary()
+        self.setupAnalytics()
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
@@ -321,27 +472,28 @@ class Ui_iPhaser(QMainWindow):
         height = self.centralwidget.height()
 
         # Calculate the new size and position of the video widget
-        videoWidth = width - 500 -25
-        videoHeight = height - 250 -25
+        videoWidth = min(width - 970 - 25, (height - 50)/13*15)
+        videoHeight = min(height - 50, (width - 970 - 25)/15*13)
+
+        # videoWidth = width - 970 - 25
+        # videoHeight = height - 25
+
+
 
         # Set the new geometry of the video widget
-        self.DisplayVideo.setGeometry(QtCore.QRect(500, 250, videoWidth, videoHeight))
-
-        # Get the current window size
-        width = self.centralwidget.width()
-        height = self.centralwidget.height()
+        self.DisplayVideo.setGeometry(QtCore.QRect(970, 25, videoWidth, videoHeight))
 
         # Calculate the new position of the image label
         imageWidth = self.imageLabel.pixmap().width()
         imageHeight = self.imageLabel.pixmap().height()
         imageX = 50  # Align to the left side of the window
-        imageY = height - imageHeight - 50 # Align to the bottom of the window
+        imageY = height - imageHeight - 50  # Align to the bottom of the window
 
         # Set the new geometry of the image label
         self.imageLabel.setGeometry(QtCore.QRect(imageX, imageY, imageWidth, imageHeight))
 
-        self.startButton.setGeometry(QtCore.QRect(self.width() - 300, 100, 80, 80))
-        self.stopButton.setGeometry(QtCore.QRect(self.width() - 200, 100, 80, 80))
+        self.startButton.setGeometry(QtCore.QRect(650, self.height() - 150, 80, 80))
+        self.stopButton.setGeometry(QtCore.QRect(750, self.height() - 150, 80, 80))
 
     def update_image(self):
         """Convert from an opencv image to QPixmap"""
@@ -375,7 +527,7 @@ class Ui_iPhaser(QMainWindow):
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(),  Qt.KeepAspectRatio)
+        p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
         p = QPixmap.fromImage(p)
         self.DisplayVideo.setPixmap(p)
 
@@ -387,7 +539,7 @@ class Ui_iPhaser(QMainWindow):
         add_log = [datetime.datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
         add_log += prob.tolist()
         self.log_data.append(add_log)
-        pred_percentages = ((np.exp(pred)/np.exp(pred).sum()) * 100).tolist()
+        pred_percentages = ((np.exp(pred) / np.exp(pred).sum()) * 100).tolist()
         self.phase1_prob.setValue(pred_percentages[0])
         self.phase2_prob.setValue(pred_percentages[1])
         self.phase3_prob.setValue(pred_percentages[2])
@@ -415,7 +567,7 @@ class Ui_iPhaser(QMainWindow):
         #                                     (self.FRAME_WIDTH, self.FRAME_HEIGHT))
         self.start_time = datetime.datetime.now().strftime("%H:%M:%S")
         self.log_file = os.path.join(self.save_folder, self.trainee.text() + "_" + self.start_time.replace(":",
-                                                                                                              "-") + ".csv")
+                                                                                                           "-") + ".csv")
         self.startTime = datetime.datetime.now()
         lineEdits = self.trainLabel.findChildren(QLineEdit)
         for lineEdit in lineEdits:
@@ -423,7 +575,6 @@ class Ui_iPhaser(QMainWindow):
                 if self.surgeons.findText(lineEdit.text()) == -1 and lineEdit.text() != '':
                     self.surgeons.addItem(lineEdit.text())
                     self.surgeons.setCurrentIndex(-1)
-
 
     def onButtonClickStop(self):
         self.startButton.setStyleSheet("background-color: DarkGreen;")
@@ -746,6 +897,7 @@ class Ui_iPhaser(QMainWindow):
             if widget.objectName() == 'PhaseRecognition':
                 break
             num_widget -= 1
+        widget1 = QtWidgets.QWidget(self)
         e1 = QLabel('Idle')
         e1.setObjectName("Idle")
         e1.setFont(QFont("Arial", 16, QFont.Bold))
@@ -848,7 +1000,25 @@ class Ui_iPhaser(QMainWindow):
         egrid.addWidget(self.phase4_state, 3, 1)
         egrid.addWidget(self.phase4_prob, 3, 2)
         egrid.setAlignment(Qt.AlignCenter)
-        widget.setLayout(egrid)
+        widget1.setLayout(egrid)
+
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setStyleSheet("background-color: black;")
+
+        self.a1 = QLabel("Predicted phase")
+        self.a1.setFont(QFont("Arial", 16, QFont.Bold))
+        self.a2 = QLineEdit(self.pred)
+        self.a2.setEnabled(False)
+        self.a2.setFont(QFont("Arial", 26, QFont.Bold))
+        self.a2.setStyleSheet("color: darkblue;")
+        self.VLayout3 = QtWidgets.QVBoxLayout()
+        self.VLayout3.addWidget(widget1)
+        self.VLayout3.addWidget(line)
+        self.VLayout3.addWidget(self.a1, alignment=Qt.AlignCenter)
+        self.VLayout3.addWidget(self.a2, alignment=Qt.AlignCenter)
+        widget.setLayout(self.VLayout3)
 
     def e1_button_toggled(self):
         pass
@@ -871,126 +1041,72 @@ class Ui_iPhaser(QMainWindow):
         QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(fullpath))
         self.reportButton.setEnabled(True)
 
-    def setupSummary(self):
+    def setupAnalytics(self):
         num_widget = self.verticalLayout.count()
         while num_widget > 0:
             widget = self.verticalLayout.itemAt(num_widget - 1).widget()
-            if widget.objectName() == 'SummaryReport':
+            if widget.objectName() == 'OnlineAnalytics':
                 break
             num_widget -= 1
-        self.summary = widget
-        egrid = QGridLayout()
-        group1 = QGroupBox()
-        group1.setObjectName("DurationGroup")
-        group1.setStyleSheet("QGroupBox#DurationGroup{border:0;}")
-        hbox = QHBoxLayout()
-        hbox.setObjectName("DurationLayout")
-        e1 = QLabel("Duration:")
-        e1.setObjectName("Duration")
-        e1.setFont(QFont("Arial", 16, QFont.Bold))
-        e1.setStyleSheet("color: white;")
-        self.flag = False
-        self.Timer = QtCore.QTimer()
-        self.Timer.timeout.connect(self.countTime)
-        self.Timer.start(1)
-        self.hour = 0
-        self.minute = 0
-        self.second = 0
-        e2 = QLabel('{:02d}'.format(self.hour))
-        e2.setAlignment(Qt.AlignCenter)
-        e2.setObjectName("DurationHour")
-        e2.setFont(QFont("Arial", 16, QFont.Bold))
-        e2.setStyleSheet("background-color: white;")
-        self.duraHour = e2
-        e3 = QLabel("hrs:")
-        e3.setObjectName("DurationHourUnit")
-        e3.setFont(QFont("Arial", 16, QFont.Bold))
-        e3.setStyleSheet("color: white;")
-        e4 = QLabel('{:02d}'.format(self.minute))
-        e4.setAlignment(Qt.AlignCenter)
-        e4.setObjectName("DurationMinute")
-        e4.setFont(QFont("Arial", 16, QFont.Bold))
-        e4.setStyleSheet("background-color: white;")
-        self.duraMinute = e4
-        e5 = QLabel("min:")
-        e5.setObjectName("DurationMinuteUnit")
-        e5.setFont(QFont("Arial", 16, QFont.Bold))
-        e5.setStyleSheet("color: white;")
-        e6 = QLabel('{:02d}'.format(self.second))
-        e6.setAlignment(Qt.AlignCenter)
-        e6.setObjectName("DurationSecond")
-        e6.setFont(QFont("Arial", 16, QFont.Bold))
-        e6.setStyleSheet("background-color: white;")
-        self.duraSecond = e6
-        e7 = QLabel("sec")
-        e7.setObjectName("DurationSecondUnit")
-        e7.setFont(QFont("Arial", 16, QFont.Bold))
-        e7.setStyleSheet("color: white;")
-        hbox.addWidget(e1)
-        hbox.addWidget(e2)
-        hbox.addWidget(e3)
-        hbox.addWidget(e4)
-        hbox.addWidget(e5)
-        hbox.addWidget(e6)
-        hbox.addWidget(e7)
-        hbox.setSpacing(5)
-        group1.setLayout(hbox)
-        group2 = QGroupBox()
-        group2.setObjectName("SurgeonsGroup")
-        group2.setStyleSheet("QGroupBox#SurgeonsGroup{border:0;}")
-        hbox_1 = QHBoxLayout()
-        hbox_1.setObjectName("SurgeonsLayout")
-        e8 = QLabel("Surgeons:")
-        e8.setObjectName("Surgeons")
-        e8.setFont(QFont("Arial", 16, QFont.Bold))
-        e8.setStyleSheet("color: white;")
-        # e9.setAlignment(Qt.AlignCenter)
-        e10 = QLabel()
-        hbox_1.addWidget(e8)
-        hbox_1.addWidget(self.surgeons)
-        hbox_1.addWidget(e10)
-        hbox_1.setSpacing(10)
-        # hbox_1.setAlignment(Qt.AlignLeft)
-        group2.setLayout(hbox_1)
-        group2.setAlignment(Qt.AlignLeft)
-        group3 = QGroupBox()
-        group3.setObjectName("ReportGroup")
-        group3.setStyleSheet("QGroupBox#ReportGroup{border:0;}")
-        hbox_2 = QHBoxLayout()
-        hbox_2.setObjectName("ReportLayout")
-        self.reportButton = QPushButton("Generate Report")
-        self.reportButton.setObjectName("ReportButton")
-        self.reportButton.setFont(QFont("Arial", 16))
-        self.reportButton.setStyleSheet("QPushButton"
-                                        "{"
-                                        "background-color: green;"
-                                        "color: white;"
-                                        "padding: 5px 15px;"
-                                        "margin-top: 10px;"
-                                        "outline: 1px;"
-                                        "min-width: 8em;"
-                                        "}")
-        self.reportButton.clicked.connect(self.generateReport)
-        hbox_2.addWidget(self.reportButton)
-        hbox_2.setAlignment(Qt.AlignCenter)
-        group3.setLayout(hbox_2)
-        egrid.addWidget(group1, 0, 0)
-        egrid.addWidget(group2, 1, 0)
-        egrid.addWidget(group3, 2, 0)
-        widget.setLayout(egrid)
+        # Create the gray rectangles
+        gray_rect1 = QFrame()
+        gray_rect1.setFrameShape(QFrame.StyledPanel)
+        gray_rect1.setStyleSheet("background-color: gray;")
+        gray_rect1.setMinimumWidth(300)
+        gray_rect2 = QFrame()
+        gray_rect2.setFrameShape(QFrame.StyledPanel)
+        gray_rect2.setStyleSheet("background-color: gray;")
+        gray_rect2.setMinimumWidth(300)
+        gray_rect3 = QFrame()
+        gray_rect3.setFrameShape(QFrame.StyledPanel)
+        gray_rect3.setStyleSheet("background-color: gray;")
+        gray_rect3.setMinimumWidth(300)
+        gray_rect4 = QFrame()
+        gray_rect4.setFrameShape(QFrame.StyledPanel)
+        gray_rect4.setStyleSheet("background-color: gray;")
+        gray_rect4.setMinimumWidth(300)
 
-    def setHLayout(self, name, percent):
-        widget = QtWidgets.QLabel(name.title())
-        widget.setObjectName(name.title().replace(' ', '') + 'Title')
-        widget.setFont(QFont('Arial', 18, QFont.Bold))
-        widget.setStyleSheet("color: white;")
-        self.horizontalLayout.addWidget(widget, int(percent / 5))
-        widget1 = QtWidgets.QWidget()
-        widget1.setObjectName(name.title().replace(' ', ''))
-        widget1.setAttribute(Qt.WA_StyledBackground, True)
-        widget1.setStyleSheet(
-            f"QWidget#{name.title().replace(' ', '')}" + "{background-color: #757575; border-radius:5px;}")
-        self.horizontalLayout.addWidget(widget1, int(percent * 4 / 5))
+        # Create the labels
+        e1 = QLabel('Time:')
+        e1.setObjectName("Time")
+        e1.setFont(QFont("Arial", 16, QFont.Bold))
+        e1.setStyleSheet("color:white;")
+        e3 = QLabel('Mentor:')
+        e3.setObjectName("Mentor")
+        e3.setFont(QFont("Arial", 16, QFont.Bold))
+        e3.setStyleSheet("color:white;")
+        e5 = QLabel('Trainee:')
+        e5.setObjectName("Trainee")
+        e5.setFont(QFont("Arial", 16, QFont.Bold))
+        e5.setStyleSheet("color:white;")
+        e7 = QLabel('NT-index:')
+        e7.setObjectName("NT-index")
+        e7.setFont(QFont("Arial", 16, QFont.Bold))
+        e7.setStyleSheet("color:white;")
+
+        # Create the layout for each row
+        row1_layout = QHBoxLayout()
+        row1_layout.addWidget(e1)
+        row1_layout.addWidget(gray_rect1)
+        row2_layout = QHBoxLayout()
+        row2_layout.addWidget(e3)
+        row2_layout.addWidget(gray_rect2)
+        row3_layout = QHBoxLayout()
+        row3_layout.addWidget(e5)
+        row3_layout.addWidget(gray_rect3)
+        row4_layout = QHBoxLayout()
+        row4_layout.addWidget(e7)
+        row4_layout.addWidget(gray_rect4)
+
+        # Create the main vertical layout
+        VLayout = QVBoxLayout()
+        VLayout.addLayout(row1_layout)
+        VLayout.addLayout(row2_layout)
+        VLayout.addLayout(row3_layout)
+        VLayout.addLayout(row4_layout)
+
+        # Set the layout for the widget
+        widget.setLayout(VLayout)
 
     def setVLayout(self, name, percent):
         widget = QtWidgets.QLabel(name.title())
@@ -1002,11 +1118,11 @@ class Ui_iPhaser(QMainWindow):
         widget1.setObjectName(name.title().replace(' ', ''))
         widget1.setAttribute(Qt.WA_StyledBackground, True)
         widget1.setStyleSheet(
-            f"QWidget#{name.title().replace(' ', '')}" + "{background-color: #757575; border-radius:5px;}")
+            f"QWidget#{name.title().replace(' ', '')}" + "{background-color: rgb(98, 154, 202); border-radius:5px;}")
         self.verticalLayout.addWidget(widget1, 21)
         gapWidget = QtWidgets.QWidget()
         gapWidget.setFixedWidth(50)  # Set the desired width for the gap
-        gapWidget.setObjectName(name.title().replace(' ', '')+'Gap')
+        gapWidget.setObjectName(name.title().replace(' ', '') + 'Gap')
         self.verticalLayout.addWidget(gapWidget, 5)
 
     def retranslateUi(self):
@@ -1028,7 +1144,8 @@ class Ui_iPhaser(QMainWindow):
         datas = zip(*self.log_data)
         data_dict = {}
         # [datetime.datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
-        names = ["Time", "Trainee", "Trainer", "Bed", "Prediction", "Phase idle", "Phase marking", "Phase injection", "Phase dissection"]
+        names = ["Time", "Trainee", "Trainer", "Bed", "Prediction", "Phase idle", "Phase marking", "Phase injection",
+                 "Phase dissection"]
         for name, data in zip(names, datas):
             data_dict[name] = list(data)
         pd_log = pd.DataFrame.from_dict(data_dict)
