@@ -85,8 +85,8 @@ class ImageProcessingThread(QThread):
                 self.frames_to_process = []
                 self.processed_frame.emit(pred)
 
-    def process_image(self, img):
-        cv_img = img[self.start_x:self.end_x, self.start_y:self.end_y]  # Crop images
+    def process_image(self, cv_img):
+        # cv_img = img[self.start_x:self.end_x, self.start_y:self.end_y]  # Crop images
         rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
         pred = self.phaseseg.phase_frame(rgb_image)  # TODO:可以用time查看該語句的延遲時間
 
@@ -181,10 +181,10 @@ class Ui_iPhaser(QMainWindow):
         self.disply_width = 1080
         self.display_height = 720
         self.start_x = 0
-        self.end_x = 450
-        self.start_y = 0
+        self.end_x = -1
+        self.start_y = 530
         # self.start_y = 450
-        self.end_y = 450
+        self.end_y = -1
         # cv_img[0:1150, 450:1800]
         self.save_folder = os.path.join("../Records")
         if not os.path.isdir(self.save_folder):
@@ -460,7 +460,7 @@ class Ui_iPhaser(QMainWindow):
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
-        self.camera = cv2.VideoCapture(0)
+        self.camera = cv2.VideoCapture("dataset/Case_D.MP4")
         self.process_frames = False
 
         self.timer = QTimer(self)
@@ -511,7 +511,9 @@ class Ui_iPhaser(QMainWindow):
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
         ret, frame = self.camera.read()
+        time.sleep(0.1)
         if ret:
+            frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
                 self.processing_thread.add_frame(frame)
                 self.display_frame(frame)
@@ -528,12 +530,12 @@ class Ui_iPhaser(QMainWindow):
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             if self.manual_frame > 0:
                 self.pred = self.manual_set
-            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
+            # rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
         if self.WORKING:
             # print('write', rgb_image.shape)
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             rbg_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
+            # rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
             # self.output_video.write(rbg_image)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
@@ -547,6 +549,7 @@ class Ui_iPhaser(QMainWindow):
         pred_index = np.argmax(pred)
         prob = np.exp(pred) / sum(np.exp(pred))
         self.pred = self.index2phase[pred_index]
+        self.a2.setText(self.pred)
         add_log = [datetime.datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
         add_log += prob.tolist()
         self.log_data.append(add_log)
@@ -1141,7 +1144,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture(0)  # TODO: change camera
+        capture = cv2.VideoCapture("dataset/Case_D.MP4")  # TODO: change camera
 
         # Default resolutions of the frame are obtained (system dependent)
         frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
