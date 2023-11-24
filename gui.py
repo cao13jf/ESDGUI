@@ -52,10 +52,10 @@ COMBOBOX = """
 
 def add_text(fc, results, fps, frame):
     w, h, c = frame.shape
-    cv2.putText(frame, "   Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (30, 20), cv2.FONT_HERSHEY_SIMPLEX,
-                0.5, (0, 255, 0), 1)
-    cv2.putText(frame, "  Phase: {:<15s}".format(results), (30, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-    cv2.putText(frame, " Trainee: {:<15s}".format(fps), (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+    cv2.putText(frame, "   Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (22, 40), cv2.FONT_HERSHEY_SIMPLEX,
+                1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "  Phase: {:<15s}".format(results), (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
+    cv2.putText(frame, " Trainee: {:<15s}".format(fps), (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
 
     # cv2.putText(frame, " Blood vessel".format(fps), (140, w - 40),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
     # cv2.putText(frame, " Muscularis".format(fps), (140, w - 80),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
@@ -353,11 +353,11 @@ class Ui_iPhaser(QMainWindow):
         hbox_2.setObjectName("ReportLayout")
         self.reportButton = QPushButton("Generate Report")
         self.reportButton.setObjectName("ReportButton")
-        self.reportButton.setFont(QFont("Arial", 16))
+        self.reportButton.setFont(QFont("Arial", 16, QFont.Bold))
         self.reportButton.setStyleSheet("QPushButton"
                                         "{"
-                                        "background-color: green;"
-                                        "color: white;"
+                                        "background-color: white;"
+                                        # "color: white;"
                                         "padding: 5px 15px;"
                                         "margin-top: 10px;"
                                         "outline: 1px;"
@@ -511,14 +511,23 @@ class Ui_iPhaser(QMainWindow):
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
         ret, frame = self.camera.read()
-        time.sleep(0.1)
+        time.sleep(0.05)
         if ret:
             frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
                 self.processing_thread.add_frame(frame)
                 self.display_frame(frame)
+
+        # update the online analytics box
+                self.current_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+                self.rect1.setText(self.current_time)
+                self.rect2.setText(self.mentor.text())
+                self.rect3.setText(self.trainee.text())
+                self.rect4.setText(self.bed.text())
+
             else:
                 self.display_frame(frame)
+
 
     def display_frame(self, frame):
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -530,12 +539,12 @@ class Ui_iPhaser(QMainWindow):
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             if self.manual_frame > 0:
                 self.pred = self.manual_set
-            # rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
         if self.WORKING:
             # print('write', rgb_image.shape)
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             rbg_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-            # rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
             # self.output_video.write(rbg_image)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
@@ -589,6 +598,11 @@ class Ui_iPhaser(QMainWindow):
                 if self.surgeons.findText(lineEdit.text()) == -1 and lineEdit.text() != '':
                     self.surgeons.addItem(lineEdit.text())
                     self.surgeons.setCurrentIndex(-1)
+
+
+
+
+
 
     def onButtonClickStop(self):
         self.startButton.setStyleSheet("background-color: DarkGreen;")
@@ -1023,10 +1037,10 @@ class Ui_iPhaser(QMainWindow):
 
         self.a1 = QLabel("Predicted phase")
         self.a1.setFont(QFont("Arial", 16, QFont.Bold))
-        self.a2 = QLineEdit(self.pred)
+        self.a2 = QLineEdit()
         self.a2.setEnabled(False)
         self.a2.setFont(QFont("Arial", 26, QFont.Bold))
-        self.a2.setStyleSheet("color: darkblue;")
+        self.a2.setStyleSheet("color: #D2C200;")
         self.VLayout3 = QtWidgets.QVBoxLayout()
         self.VLayout3.addWidget(widget1)
         self.VLayout3.addWidget(line)
@@ -1063,22 +1077,23 @@ class Ui_iPhaser(QMainWindow):
                 break
             num_widget -= 1
         # Create the gray rectangles
-        gray_rect1 = QFrame()
-        gray_rect1.setFrameShape(QFrame.StyledPanel)
-        gray_rect1.setStyleSheet("background-color: gray;")
-        gray_rect1.setMinimumWidth(300)
-        gray_rect2 = QFrame()
-        gray_rect2.setFrameShape(QFrame.StyledPanel)
-        gray_rect2.setStyleSheet("background-color: gray;")
-        gray_rect2.setMinimumWidth(300)
-        gray_rect3 = QFrame()
-        gray_rect3.setFrameShape(QFrame.StyledPanel)
-        gray_rect3.setStyleSheet("background-color: gray;")
-        gray_rect3.setMinimumWidth(300)
-        gray_rect4 = QFrame()
-        gray_rect4.setFrameShape(QFrame.StyledPanel)
-        gray_rect4.setStyleSheet("background-color: gray;")
-        gray_rect4.setMinimumWidth(300)
+        self.rect1 = QLineEdit()
+        self.rect1.setStyleSheet("background-color: gray;")
+        self.rect1.setFixedWidth(300)
+        self.rect2 = QLineEdit()
+        self.rect2.setStyleSheet("background-color: gray;")
+        self.rect2.setFixedWidth(300)
+        self.rect3 = QLineEdit()
+        self.rect3.setStyleSheet("background-color: gray;")
+        self.rect3.setFixedWidth(300)
+        self.rect4 = QLineEdit()
+        self.rect4.setStyleSheet("background-color: gray;")
+        self.rect4.setFixedWidth(300)
+
+        self.rect1.setEnabled(False)
+        self.rect2.setEnabled(False)
+        self.rect3.setEnabled(False)
+        self.rect4.setEnabled(False)
 
         # Create the labels
         e1 = QLabel('Time:')
@@ -1101,16 +1116,16 @@ class Ui_iPhaser(QMainWindow):
         # Create the layout for each row
         row1_layout = QHBoxLayout()
         row1_layout.addWidget(e1)
-        row1_layout.addWidget(gray_rect1)
+        row1_layout.addWidget(self.rect1)
         row2_layout = QHBoxLayout()
         row2_layout.addWidget(e3)
-        row2_layout.addWidget(gray_rect2)
+        row2_layout.addWidget(self.rect2)
         row3_layout = QHBoxLayout()
         row3_layout.addWidget(e5)
-        row3_layout.addWidget(gray_rect3)
+        row3_layout.addWidget(self.rect3)
         row4_layout = QHBoxLayout()
         row4_layout.addWidget(e7)
-        row4_layout.addWidget(gray_rect4)
+        row4_layout.addWidget(self.rect4)
 
         # Create the main vertical layout
         VLayout = QVBoxLayout()
