@@ -239,24 +239,38 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton.setIconSize(QtCore.QSize(150, 150))
         self.stopButton.clicked.connect(self.onButtonClickStop)
 
-        self.layoutWidget = QtWidgets.QWidget(self)
-        self.layoutWidget.setGeometry(QtCore.QRect(30, 20, 440, 1000))
-        self.layoutWidget.setObjectName("layoutWidget")
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.layoutWidget)
-        self.verticalLayout.setObjectName("verticalLayout")
-
         self.layoutWidget1 = QtWidgets.QWidget(self)
         self.layoutWidget1.setGeometry(QtCore.QRect(500, 20, 440, 225))
-        self.layoutWidget.setObjectName("layoutWidget1")
+        self.layoutWidget1.setObjectName("layoutWidget1")
         self.verticalLayout1 = QtWidgets.QHBoxLayout(self.layoutWidget1)
         self.verticalLayout1.setObjectName("verticalLayout1")
 
         self.layoutWidget2 = QtWidgets.QWidget(self)
-        self.layoutWidget2.setGeometry(QtCore.QRect(500, 270, 440, 700))
-        self.layoutWidget.setObjectName("layoutWidget2")
-        self.verticalLayout2 = QtWidgets.QHBoxLayout(self.layoutWidget2)
+        self.layoutWidget2.setGeometry(QtCore.QRect(30, 600, 900, 600))
+        self.layoutWidget2.setObjectName("layoutWidget2")
+        self.verticalLayout2 = QtWidgets.QVBoxLayout(self.layoutWidget2)
         self.verticalLayout2.setObjectName("verticalLayout2")
 
+        self.layoutWidget3 = QtWidgets.QWidget(self)
+        self.layoutWidget3.setGeometry(QtCore.QRect(30, 20, 440, 225))
+        self.layoutWidget3.setObjectName("layoutWidget3")
+        self.verticalLayout3 = QtWidgets.QVBoxLayout(self.layoutWidget3)
+        self.verticalLayout3.setObjectName("verticalLayout3")
+
+        self.layoutWidget4 = QtWidgets.QWidget(self)
+        self.layoutWidget4.setGeometry(QtCore.QRect(30, 225, 440, 400))
+        self.layoutWidget4.setObjectName("layoutWidget4")
+        self.verticalLayout4 = QtWidgets.QVBoxLayout(self.layoutWidget4)
+        self.verticalLayout4.setObjectName("verticalLayout4")
+
+        self.layoutWidget5 = QtWidgets.QWidget(self)
+        self.layoutWidget5.setGeometry(QtCore.QRect(500, 225, 440, 400))
+        self.layoutWidget5.setObjectName("layoutWidget5")
+        self.verticalLayout5 = QtWidgets.QVBoxLayout(self.layoutWidget5)
+        self.verticalLayout5.setObjectName("verticalLayout5")
+
+
+        # start of training session
         self.VLayout1 = QtWidgets.QVBoxLayout()
         self.VLayout1.setObjectName("VLayout1")
         self.trainLabelTitle = QtWidgets.QLabel('Training Session')
@@ -270,8 +284,11 @@ class Ui_iPhaser(QMainWindow):
         self.trainLabel.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
         self.VLayout1.addWidget(self.trainLabel, 84)
         self.verticalLayout1.addLayout(self.VLayout1)
+        # end of training session
 
-        # start of new summary report
+        # start of summary report
+
+        ContentUpperWidget = QtWidgets.QWidget(self)
         egrid = QGridLayout()
         group1 = QGroupBox()
         group1.setObjectName("DurationGroup")
@@ -356,41 +373,68 @@ class Ui_iPhaser(QMainWindow):
         self.reportButton.setFont(QFont("Arial", 16, QFont.Bold))
         self.reportButton.setStyleSheet("QPushButton"
                                         "{"
-                                        "background-color: white;"
-                                        # "color: white;"
+                                        "background-color: green;"
+                                        "color: dark blue;"
                                         "padding: 5px 15px;"
                                         "margin-top: 10px;"
                                         "outline: 1px;"
                                         "min-width: 8em;"
                                         "}")
+        self.reportButton.setFixedSize(200, 50)
         self.reportButton.clicked.connect(self.generateReport)
         hbox_2.addWidget(self.reportButton)
         hbox_2.setAlignment(Qt.AlignCenter)
         group3.setLayout(hbox_2)
         egrid.addWidget(group1, 0, 0)
         egrid.addWidget(group2, 1, 0)
-        egrid.addWidget(group3, 2, 0)
+        upperLeftWidget = QtWidgets.QWidget(self)
+        upperLeftWidget.setLayout(egrid)
+        upperHlayout = QtWidgets.QHBoxLayout()
+        upperHlayout.addWidget(upperLeftWidget)
+        self.summaryReportOutput3 = QtWidgets.QWidget(self)
+        self.summaryReportOutput3.setStyleSheet("background-color: white;")
+        self.summaryReportOutput3.setFixedSize(400, 50)
+        upperHlayout.addWidget(self.summaryReportOutput3)
+
+        ContentUpperWidget.setLayout(upperHlayout)
+
         self.VLayout2 = QtWidgets.QVBoxLayout()
         self.VLayout2.setObjectName("VLayout2")
-        self.summaryReportTitle = QtWidgets.QLabel('Summary report')
+        self.summaryReportTitle = QtWidgets.QLabel('Summary Report')
         self.summaryReportTitle.setObjectName("SummaryReportTitle")
         self.summaryReportTitle.setStyleSheet("color:white;")
         self.summaryReportTitle.setFont(QFont("Arial", 18, QFont.Bold))
         self.VLayout2.addWidget(self.summaryReportTitle, 16)
-        self.summaryReport = QtWidgets.QWidget()
-        self.summaryReport.setObjectName("summaryReport")
-        self.summaryReport.setAttribute(Qt.WA_StyledBackground, True)
-        self.layoutWidget2.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
-        self.summaryReport.setLayout(egrid)
-        self.VLayout2.addWidget(self.summaryReport, 84)
+        self.summaryReportContent = QtWidgets.QWidget()
+        self.summaryReportContent.setObjectName("summaryReportContent")
+        self.summaryReportContent.setAttribute(Qt.WA_StyledBackground, True)
+        self.summaryReportContent.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
+        self.ContentVerticalLayout = QtWidgets.QVBoxLayout()
+        self.summaryReportContent.setLayout(self.ContentVerticalLayout)
+        self.VLayout2.addWidget(self.summaryReportContent, 84)
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
         line.setStyleSheet("background-color: black;")
 
+        ContentLowerWidget = QtWidgets.QWidget(self)
+        LowerHLayout = QtWidgets.QHBoxLayout()
+        ContentLowerWidget.setLayout(LowerHLayout)
+
+        self.LowerLeftWidget = QtWidgets.QWidget(self)
+        LowerLeftVLayout = QtWidgets.QVBoxLayout()
+        self.LowerLeftWidget.setLayout(LowerLeftVLayout)
+
         self.summaryReportOutput1 = QLabel()
         self.summaryReportOutput1.setStyleSheet("background-color: white;")
         self.summaryReportOutput1.setFixedSize(400, 200)
+
+        LowerLeftVLayout.addWidget(self.summaryReportOutput1)
+        LowerLeftVLayout.addWidget(self.reportButton)
+
+        self.LowerRightWidget = QtWidgets.QWidget(self)
+        LowerRightVLayout = QtWidgets.QVBoxLayout()
+        self.LowerRightWidget.setLayout(LowerRightVLayout)
 
         self.summaryReportOutput2 = QLabel()
         self.summaryReportOutput2.setStyleSheet("background-color: white;")
@@ -398,11 +442,11 @@ class Ui_iPhaser(QMainWindow):
 
         self.fullReportButton = QPushButton("Get Full Report")
         self.fullReportButton.setObjectName("FullReportButton")
-        self.fullReportButton.setFont(QFont("Arial", 16))
+        self.fullReportButton.setFont(QFont("Arial", 16, QFont.Bold))
         self.fullReportButton.setStyleSheet("QPushButton"
                                             "{"
                                             "background-color: green;"
-                                            "color: white;"
+                                            "color: dark blue;"
                                             "padding: 5px 15px;"
                                             "margin-top: 10px;"
                                             "outline: 1px;"
@@ -411,18 +455,358 @@ class Ui_iPhaser(QMainWindow):
         self.fullReportButton.setFixedSize(200, 50)
         self.fullReportButton.clicked.connect(self.generateReport)
 
-        self.VLayout2.addWidget(line)
-        self.VLayout2.addWidget(self.summaryReportOutput1, alignment=Qt.AlignCenter)
-        self.VLayout2.addWidget(self.summaryReportOutput2, alignment=Qt.AlignCenter)
-        self.VLayout2.addWidget(self.fullReportButton, alignment=Qt.AlignCenter)
+        LowerRightVLayout.addWidget(self.summaryReportOutput2)
+        LowerRightVLayout.addWidget(self.fullReportButton)
+
+        LowerHLayout.addWidget(self.LowerLeftWidget)
+        LowerHLayout.addWidget(self.LowerRightWidget)
+
+
+        self.ContentVerticalLayout.addWidget(ContentUpperWidget)
+        self.ContentVerticalLayout.addWidget(line)
+        self.ContentVerticalLayout.addWidget(ContentLowerWidget)
 
         self.verticalLayout2.addLayout(self.VLayout2)
+        # end of summary report
 
-        # end of new summary report
 
-        Vpercent = 100 / len(Vblocks)
-        for i in Vblocks:
-            self.setVLayout(i, Vpercent)
+        # start of Case information
+        name = "case information"
+        case_information_widget = QtWidgets.QLabel(name.title())
+        case_information_widget.setObjectName(name.title().replace(' ', '') + 'Title')
+        case_information_widget.setFont(QFont('Arial', 18, QFont.Bold))
+        case_information_widget.setStyleSheet("color: white;")
+        self.verticalLayout3.addWidget(case_information_widget, 4)
+        widget1 = QtWidgets.QWidget()
+        widget1.setObjectName(name.title().replace(' ', ''))
+        widget1.setAttribute(Qt.WA_StyledBackground, True)
+        widget1.setStyleSheet(
+            f"QWidget#{name.title().replace(' ', '')}" + "{background-color: rgb(98, 154, 202); border-radius:5px;}")
+        self.verticalLayout3.addWidget(widget1, 21)
+        gapWidget = QtWidgets.QWidget()
+        gapWidget.setFixedWidth(50)  # Set the desired width for the gap
+        gapWidget.setObjectName(name.title().replace(' ', '') + 'Gap')
+        self.verticalLayout3.addWidget(gapWidget, 5)
+
+        vlayout = QVBoxLayout(widget1)
+        vlayout.setObjectName("CaseInformationVlayout")
+        self.e1 = QLabel('Patient ID:')
+        self.e1.setObjectName("PID")
+        self.e1.setFont(QFont("Arial", 16, QFont.Bold))
+        self.e1.setStyleSheet("color:white;")
+        vlayout.addWidget(self.e1)
+        hlayout = QHBoxLayout()
+        e2 = QLineEdit()
+        e2.setFixedHeight(35)
+        e2.setFixedWidth(180)
+        e2.setObjectName("PID1")
+        e2.setStyleSheet("background: white;border-radius:5px;color: black")
+        e2.setAlignment(Qt.AlignCenter)
+        e2.setFont(QFont("Arial", 14))
+        e2.setText("Jenny")
+        hlayout.addWidget(e2)
+        e3 = QFrame()
+        e3.setFrameShape(QFrame.HLine)
+        e3.setFrameShadow(QFrame.Plain)
+        e3.setLineWidth(2)
+        e3.setObjectName("PIDSpace")
+        hlayout.addWidget(e3)
+        e4 = QLineEdit()
+        e4.setFixedHeight(35)
+        e4.setFixedWidth(180)
+        e4.setObjectName("PID2")
+        e4.setStyleSheet("background: white;border-radius:5px;color:black")
+        e4.setAlignment(Qt.AlignCenter)
+        e4.setFont(QFont("Arial", 14))
+        e4.setText("798xxx(x)")
+        hlayout.addWidget(e4)
+        hlayout.setSpacing(15)
+        vlayout.addLayout(hlayout)
+        e5 = QLabel('Date:')
+        e5.setObjectName("PIDDate")
+        e5.setFont(QFont("Arial", 16, QFont.Bold))
+        e5.setStyleSheet("color:white;")
+        vlayout.addWidget(e5)
+        hlayout1 = QHBoxLayout()
+        e6 = QLineEdit()
+        e6.setFixedHeight(35)
+        e6.setFixedWidth(105)
+        e6.setObjectName("PIDDateYear")
+        e6.setStyleSheet("background-color: white;border-radius:5px;color:black")
+        e6.setAlignment(Qt.AlignCenter)
+        e6.setFont(QFont("Arial", 14))
+        e6.setText("2023")
+        hlayout1.addWidget(e6)
+        e7 = QFrame()
+        e7.setFrameShape(QFrame.HLine)
+        e7.setFrameShadow(QFrame.Plain)
+        e7.setLineWidth(2)
+        e7.setObjectName("PIDDateSpace")
+        hlayout1.addWidget(e7)
+        e8 = QLineEdit()
+        e8.setFixedHeight(35)
+        e8.setFixedWidth(105)
+        e8.setObjectName("PIDDateMonth")
+        e8.setStyleSheet("background-color: white;border-radius:5px;color:black")
+        e8.setAlignment(Qt.AlignCenter)
+        e8.setFont(QFont("Arial", 14))
+        e8.setText("Nov")
+        hlayout1.addWidget(e8)
+        e9 = QFrame()
+        e9.setFrameShape(QFrame.HLine)
+        e9.setFrameShadow(QFrame.Plain)
+        e9.setLineWidth(2)
+        e9.setObjectName("PIDDateSpace1")
+        hlayout1.addWidget(e9)
+        e10 = QLineEdit()
+        e10.setFixedHeight(35)
+        e10.setFixedWidth(105)
+        e10.setObjectName("PIDDateDay")
+        e10.setStyleSheet("background-color: white;border-radius:5px;color: black")
+        e10.setAlignment(Qt.AlignCenter)
+        e10.setFont(QFont("Arial", 14))
+        e10.setText("10")
+        hlayout1.addWidget(e10)
+        hlayout1.setSpacing(15)
+        vlayout.addLayout(hlayout1)
+        # end of case information
+
+        # start of phase recognition
+        name = "phase recognition"
+        phase_recognition_widget = QtWidgets.QLabel(name.title())
+        phase_recognition_widget.setObjectName(name.title().replace(' ', '') + 'Title')
+        phase_recognition_widget.setFont(QFont('Arial', 18, QFont.Bold))
+        phase_recognition_widget.setStyleSheet("color: white;")
+        self.verticalLayout4.addWidget(phase_recognition_widget, 4)
+        widget2 = QtWidgets.QWidget()
+        widget2.setObjectName(name.title().replace(' ', ''))
+        widget2.setAttribute(Qt.WA_StyledBackground, True)
+        widget2.setStyleSheet(
+            f"QWidget#{name.title().replace(' ', '')}" + "{background-color: rgb(98, 154, 202); border-radius:5px;}")
+        self.verticalLayout4.addWidget(widget2, 21)
+        gapWidget = QtWidgets.QWidget()
+        gapWidget.setFixedWidth(50)  # Set the desired width for the gap
+        gapWidget.setObjectName(name.title().replace(' ', '') + 'Gap')
+        self.verticalLayout4.addWidget(gapWidget, 5)
+
+        widget3 = QtWidgets.QWidget(self)
+        e1 = QLabel('Idle')
+        e1.setObjectName("Idle")
+        e1.setFont(QFont("Arial", 16, QFont.Bold))
+        e1.setStyleSheet("color:white;")
+        self.phase1_state = QRadioButton()
+        self.phase1_state.setChecked(False)
+        # e2.setTristate(True)
+        self.phase1_state.setObjectName("IdleCheck")
+        self.phase1_state.setStyleSheet("QRadioButton"
+                                        "{"
+                                        "color : green;"
+                                        "}"
+                                        "QRadioButton::indicator"
+                                        "{"
+                                        "width : 20px;"
+                                        "height : 20px;"
+                                        "}")
+        self.phase1_prob = QProgressBar()
+        self.phase1_prob.setObjectName("IdleProgress")
+        self.phase1_prob.setStyleSheet(DEFAULT_STYLE)
+        self.phase1_prob.setValue(10)
+        self.phase1_prob.setTextVisible(False)
+        e4 = QLabel('Marking')
+        e4.setObjectName("Marking")
+        e4.setFont(QFont("Arial", 16, QFont.Bold))
+        e4.setStyleSheet("color:white;")
+        self.phase2_state = QRadioButton()
+        self.phase2_state.setChecked(False)
+        # e2.setTristate(True)
+        self.phase2_state.setObjectName("MarkingCheck")
+        self.phase2_state.setStyleSheet("QRadioButton"
+                                        "{"
+                                        "color : green;"
+                                        "}"
+                                        "QRadioButton::indicator"
+                                        "{"
+                                        "width : 20px;"
+                                        "height : 20px;"
+                                        "}")
+        self.phase2_prob = QProgressBar()
+        self.phase2_prob.setObjectName("MarkingProgress")
+        self.phase2_prob.setStyleSheet(DEFAULT_STYLE)
+        self.phase2_prob.setValue(15)
+        self.phase2_prob.setTextVisible(False)
+        e7 = QLabel('Injection')
+        e7.setObjectName("Injection")
+        e7.setFont(QFont("Arial", 16, QFont.Bold))
+        e7.setStyleSheet("color:white;")
+        self.phase3_state = QRadioButton()
+        self.phase3_state.setChecked(True)
+        # e2.setTristate(True)
+        self.phase3_state.setObjectName("InjectionCheck")
+        self.phase3_state.setStyleSheet("QRadioButton"
+                                        "{"
+                                        "color : green;"
+                                        "}"
+                                        "QRadioButton::indicator"
+                                        "{"
+                                        "width : 20px;"
+                                        "height : 20px;"
+                                        "}")
+        self.phase3_prob = QProgressBar()
+        self.phase3_prob.setObjectName("InjectionProgress")
+        self.phase3_prob.setStyleSheet(DEFAULT_STYLE)
+        self.phase3_prob.setValue(70)
+        self.phase3_prob.setTextVisible(False)
+        e10 = QLabel('Dissection')
+        e10.setObjectName("Dissection")
+        e10.setFont(QFont("Arial", 16, QFont.Bold))
+        e10.setStyleSheet("color:white;")
+        self.phase4_state = QRadioButton()
+        self.phase4_state.setChecked(False)
+        # e2.setTristate(True)
+        self.phase4_state.setObjectName("DissectionCheck")
+        self.phase4_state.setStyleSheet("QRadioButton"
+                                        "{"
+                                        "color : green;"
+                                        "}"
+                                        "QRadioButton::indicator"
+                                        "{"
+                                        "width : 20px;"
+                                        "height : 20px;"
+                                        "}")
+        self.phase4_prob = QProgressBar()
+        self.phase4_prob.setObjectName("DissectionProgress")
+        self.phase4_prob.setStyleSheet(DEFAULT_STYLE)
+        self.phase4_prob.setValue(10)
+        self.phase4_prob.setTextVisible(False)
+        egrid = QGridLayout()
+        egrid.addWidget(e1, 0, 0)
+        egrid.addWidget(self.phase1_state, 0, 1)
+        egrid.addWidget(self.phase1_prob, 0, 2)
+        egrid.addWidget(e4, 1, 0)
+        egrid.addWidget(self.phase2_state, 1, 1)
+        egrid.addWidget(self.phase2_prob, 1, 2)
+        egrid.addWidget(e7, 2, 0)
+        egrid.addWidget(self.phase3_state, 2, 1)
+        egrid.addWidget(self.phase3_prob, 2, 2)
+        egrid.addWidget(e10, 3, 0)
+        egrid.addWidget(self.phase4_state, 3, 1)
+        egrid.addWidget(self.phase4_prob, 3, 2)
+        egrid.setAlignment(Qt.AlignCenter)
+        widget3.setLayout(egrid)
+
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setStyleSheet("background-color: black;")
+
+        self.a1 = QLabel("Predicted phase")
+        self.a1.setFont(QFont("Arial", 16, QFont.Bold))
+        self.a2 = QLineEdit()
+        self.a2.setAlignment(Qt.AlignCenter)
+        self.a2.setEnabled(False)
+        self.a2.setFont(QFont("Arial", 26, QFont.Bold))
+        self.a2.setStyleSheet("color: #D2C200;")
+        self.VLayout3 = QtWidgets.QVBoxLayout()
+        self.VLayout3.addWidget(widget3)
+        self.VLayout3.addWidget(line)
+        self.VLayout3.addWidget(self.a1, alignment=Qt.AlignCenter)
+        self.VLayout3.addWidget(self.a2, alignment=Qt.AlignCenter)
+        widget2.setLayout(self.VLayout3)
+        # end of phase recognition
+
+        # start of online analytics
+        name = "online analytics"
+        online_analytics_widget = QtWidgets.QLabel(name.title())
+        online_analytics_widget.setObjectName(name.title().replace(' ', '') + 'Title')
+        online_analytics_widget.setFont(QFont('Arial', 18, QFont.Bold))
+        online_analytics_widget.setStyleSheet("color: white;")
+        self.verticalLayout5.addWidget(online_analytics_widget, 4)
+        widget4 = QtWidgets.QWidget()
+        widget4.setObjectName(name.title().replace(' ', ''))
+        widget4.setAttribute(Qt.WA_StyledBackground, True)
+        widget4.setStyleSheet(
+            f"QWidget#{name.title().replace(' ', '')}" + "{background-color: rgb(98, 154, 202); border-radius:5px;}")
+        self.verticalLayout5.addWidget(widget4, 21)
+        gapWidget = QtWidgets.QWidget()
+        gapWidget.setFixedWidth(50)  # Set the desired width for the gap
+        gapWidget.setObjectName(name.title().replace(' ', '') + 'Gap')
+        self.verticalLayout5.addWidget(gapWidget, 5)
+
+        # Create the gray rectangles
+        self.rect1 = QLineEdit()
+        self.rect1.setStyleSheet("background-color: gray; color: white;")
+        self.rect1.setFixedWidth(300)
+        self.rect1.setFixedHeight(30)
+        self.rect2 = QLineEdit()
+        self.rect2.setStyleSheet("background-color: gray; color: white;")
+        self.rect2.setFixedWidth(300)
+        self.rect2.setFixedHeight(30)
+        self.rect3 = QLineEdit()
+        self.rect3.setStyleSheet("background-color: gray; color: white;")
+        self.rect3.setFixedWidth(300)
+        self.rect3.setFixedHeight(30)
+        self.rect4 = QLineEdit()
+        self.rect4.setStyleSheet("background-color: gray; color: white;")
+        self.rect4.setFixedWidth(300)
+        self.rect4.setFixedHeight(30)
+
+        self.rect1.setAlignment(Qt.AlignCenter)
+        self.rect1.setFont(QFont("Arial", 16, QFont.Bold))
+        self.rect2.setAlignment(Qt.AlignCenter)
+        self.rect2.setFont(QFont("Arial", 16, QFont.Bold))
+        self.rect3.setAlignment(Qt.AlignCenter)
+        self.rect3.setFont(QFont("Arial", 16, QFont.Bold))
+        self.rect4.setAlignment(Qt.AlignCenter)
+        self.rect4.setFont(QFont("Arial", 16, QFont.Bold))
+
+        # Create the labels
+        e1 = QLabel('Time:')
+        e1.setObjectName("Time")
+        e1.setFont(QFont("Arial", 16, QFont.Bold))
+        e1.setStyleSheet("color:white;")
+        e3 = QLabel('Mentor:')
+        e3.setObjectName("Mentor")
+        e3.setFont(QFont("Arial", 16, QFont.Bold))
+        e3.setStyleSheet("color:white;")
+        e5 = QLabel('Trainee:')
+        e5.setObjectName("Trainee")
+        e5.setFont(QFont("Arial", 16, QFont.Bold))
+        e5.setStyleSheet("color:white;")
+        e7 = QLabel('NT-index:')
+        e7.setObjectName("NT-index")
+        e7.setFont(QFont("Arial", 16, QFont.Bold))
+        e7.setStyleSheet("color:white;")
+
+        # Create the layout for each row
+        row1_layout = QHBoxLayout()
+        row1_layout.addWidget(e1)
+        row1_layout.addWidget(self.rect1)
+        row2_layout = QHBoxLayout()
+        row2_layout.addWidget(e3)
+        row2_layout.addWidget(self.rect2)
+        row3_layout = QHBoxLayout()
+        row3_layout.addWidget(e5)
+        row3_layout.addWidget(self.rect3)
+        row4_layout = QHBoxLayout()
+        row4_layout.addWidget(e7)
+        row4_layout.addWidget(self.rect4)
+
+        # Create the main vertical layout
+        VLayout = QVBoxLayout()
+        VLayout.addLayout(row1_layout)
+        VLayout.addLayout(row2_layout)
+        VLayout.addLayout(row3_layout)
+        VLayout.addLayout(row4_layout)
+
+        # Set the layout for the widget
+        widget4.setLayout(VLayout)
+
+        # end of online analytics
+
+
+        # Vpercent = 100 / len(Vblocks)
+        # for i in Vblocks:
+        #     self.setVLayout(i, Vpercent)
 
         self.imageLabel = QtWidgets.QLabel(self.centralwidget)
         self.imageLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)  # Align to the left bottom corner
@@ -453,10 +837,10 @@ class Ui_iPhaser(QMainWindow):
         # Adjust the position and size of the image label when the main window is resized
         self.centralwidget.resizeEvent = self.windowResized
 
-        self.setupCaseInformation()
+        # self.setupCaseInformation()
         self.setupTrainer()
-        self.setupPhaseRecog()
-        self.setupAnalytics()
+        # self.setupPhaseRecog()
+        # self.setupAnalytics()
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
@@ -1038,6 +1422,7 @@ class Ui_iPhaser(QMainWindow):
         self.a1 = QLabel("Predicted phase")
         self.a1.setFont(QFont("Arial", 16, QFont.Bold))
         self.a2 = QLineEdit()
+        self.a2.setAlignment(Qt.AlignCenter)
         self.a2.setEnabled(False)
         self.a2.setFont(QFont("Arial", 26, QFont.Bold))
         self.a2.setStyleSheet("color: #D2C200;")
@@ -1078,22 +1463,30 @@ class Ui_iPhaser(QMainWindow):
             num_widget -= 1
         # Create the gray rectangles
         self.rect1 = QLineEdit()
-        self.rect1.setStyleSheet("background-color: gray;")
+        self.rect1.setStyleSheet("background-color: gray; color: white;")
         self.rect1.setFixedWidth(300)
+        self.rect1.setFixedHeight(30)
         self.rect2 = QLineEdit()
-        self.rect2.setStyleSheet("background-color: gray;")
+        self.rect2.setStyleSheet("background-color: gray; color: white;")
         self.rect2.setFixedWidth(300)
+        self.rect2.setFixedHeight(30)
         self.rect3 = QLineEdit()
-        self.rect3.setStyleSheet("background-color: gray;")
+        self.rect3.setStyleSheet("background-color: gray; color: white;")
         self.rect3.setFixedWidth(300)
+        self.rect3.setFixedHeight(30)
         self.rect4 = QLineEdit()
-        self.rect4.setStyleSheet("background-color: gray;")
+        self.rect4.setStyleSheet("background-color: gray; color: white;")
         self.rect4.setFixedWidth(300)
+        self.rect4.setFixedHeight(30)
 
-        self.rect1.setEnabled(False)
-        self.rect2.setEnabled(False)
-        self.rect3.setEnabled(False)
-        self.rect4.setEnabled(False)
+        self.rect1.setAlignment(Qt.AlignCenter)
+        self.rect1.setFont(QFont("Arial", 16, QFont.Bold))
+        self.rect2.setAlignment(Qt.AlignCenter)
+        self.rect2.setFont(QFont("Arial", 16, QFont.Bold))
+        self.rect3.setAlignment(Qt.AlignCenter)
+        self.rect3.setFont(QFont("Arial", 16, QFont.Bold))
+        self.rect4.setAlignment(Qt.AlignCenter)
+        self.rect4.setFont(QFont("Arial", 16, QFont.Bold))
 
         # Create the labels
         e1 = QLabel('Time:')
