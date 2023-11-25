@@ -17,6 +17,11 @@ from PyQt5.QtWidgets import *
 import torch
 import random
 
+import matplotlib.pyplot as plt
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 from utils.guis import PhaseCom, draw_segmentation, add_text
 from utils.parser import ParserUse
 from utils.gui_parts import *
@@ -147,6 +152,9 @@ class Ui_iPhaser(QMainWindow):
         self.surgeons.lineEdit().setReadOnly(True)
         self.surgeons.setCurrentIndex(-1)
         self.pred = "--"
+        self.preds = []
+        self.nt_indexes = [0]
+        self.transitions = []
         self.pop_image = {}
         self.pop_idx = []
         self.total_diff = []
@@ -391,10 +399,18 @@ class Ui_iPhaser(QMainWindow):
         upperLeftWidget.setLayout(egrid)
         upperHlayout = QtWidgets.QHBoxLayout()
         upperHlayout.addWidget(upperLeftWidget)
-        self.summaryReportOutput3 = QtWidgets.QWidget(self)
-        self.summaryReportOutput3.setStyleSheet("background-color: white;")
-        self.summaryReportOutput3.setFixedSize(400, 50)
-        upperHlayout.addWidget(self.summaryReportOutput3)
+
+        self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))
+        self.canvas_nt_index = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
+        self.canvas_table = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
+
+        # self.summaryReportOutput3 = QtWidgets.QWidget(self)
+        # self.summaryReportOutput3.setStyleSheet("background-color: white;")
+        # self.summaryReportOutput3.setFixedSize(400, 50)
+        upperHlayout.addWidget(self.canvas_bar)
+        self.ax_bar = self.canvas_bar.figure.subplots()
+        self.ax_bar.set_axis_off()
+        self.phase_colors = {"idle": "blue", "marking": "green", "injection": "yellow", "dissection": "red"}
 
         ContentUpperWidget.setLayout(upperHlayout)
 
@@ -425,20 +441,24 @@ class Ui_iPhaser(QMainWindow):
         LowerLeftVLayout = QtWidgets.QVBoxLayout()
         self.LowerLeftWidget.setLayout(LowerLeftVLayout)
 
-        self.summaryReportOutput1 = QLabel()
-        self.summaryReportOutput1.setStyleSheet("background-color: white;")
-        self.summaryReportOutput1.setFixedSize(400, 200)
+        # self.summaryReportOutput1 = QLabel()
+        # self.summaryReportOutput1.setStyleSheet("background-color: white;")
+        # self.summaryReportOutput1.setFixedSize(400, 200)
 
-        LowerLeftVLayout.addWidget(self.summaryReportOutput1)
+        LowerLeftVLayout.addWidget(self.canvas_nt_index)
+        self.ax_nt = self.canvas_nt_index.figure.subplots()
+        self.ax_nt.set_xlabel("Time (seconds)")
+        self.ax_nt.set_ylabel("NT-index")
+
         LowerLeftVLayout.addWidget(self.reportButton)
 
         self.LowerRightWidget = QtWidgets.QWidget(self)
         LowerRightVLayout = QtWidgets.QVBoxLayout()
         self.LowerRightWidget.setLayout(LowerRightVLayout)
 
-        self.summaryReportOutput2 = QLabel()
-        self.summaryReportOutput2.setStyleSheet("background-color: white;")
-        self.summaryReportOutput2.setFixedSize(400, 200)
+        # self.summaryReportOutput2 = QLabel()
+        # self.summaryReportOutput2.setStyleSheet("background-color: white;")
+        # self.summaryReportOutput2.setFixedSize(400, 200)
 
         self.fullReportButton = QPushButton("Get Full Report")
         self.fullReportButton.setObjectName("FullReportButton")
@@ -455,7 +475,8 @@ class Ui_iPhaser(QMainWindow):
         self.fullReportButton.setFixedSize(200, 50)
         self.fullReportButton.clicked.connect(self.generateReport)
 
-        LowerRightVLayout.addWidget(self.summaryReportOutput2)
+        LowerRightVLayout.addWidget(self.canvas_table)
+
         LowerRightVLayout.addWidget(self.fullReportButton)
 
         LowerHLayout.addWidget(self.LowerLeftWidget)
@@ -851,6 +872,10 @@ class Ui_iPhaser(QMainWindow):
         self.timer.timeout.connect(self.update_image)
         self.timer.start(30)
 
+        self.timer2 = QTimer(self)
+        self.timer2.timeout.connect(self.update_plot)
+        self.timer2.start(1000)
+
         self.processing_thread = ImageProcessingThread(start_x=self.start_x,
                                                        end_x=self.end_x,
                                                        start_y=self.start_y,
@@ -907,7 +932,7 @@ class Ui_iPhaser(QMainWindow):
                 self.rect1.setText(self.current_time)
                 self.rect2.setText(self.mentor.text())
                 self.rect3.setText(self.trainee.text())
-                self.rect4.setText(self.bed.text())
+                self.rect4.setText(str(self.nt_indexes[-1]))
 
             else:
                 self.display_frame(frame)
@@ -958,6 +983,41 @@ class Ui_iPhaser(QMainWindow):
         self.phase3_state.setChecked(states[2])
         self.phase4_state.setChecked(states[3])
 
+
+    def update_plot(self):
+        if self.WORKING:
+            if len(self.log_data) > 1:
+                prev_pred = self.log_data[-2][-1]
+                cur_pred = self.log_data[-1][-1]
+                self.preds.append(self.pred)
+                if prev_pred != cur_pred:
+                    self.transitions.append(self.transitions[-1] + 1)
+                else:
+                    self.transitions.append(self.transitions[-1])
+            else:
+                self.transitions.append(0)
+            self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))  #TODO
+
+            self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
+            self.ax_nt.yaxis.grid(True)  # Set y-grid on
+            self.ax_nt.xaxis.grid(False)  # Set x-grid off
+            self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
+
+            self.ax_bar.clear()
+            self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
+            self.ax_bar.set_ylim(0, 1)
+
+            # Create a color map to map phase names to colors
+            cmap = plt.get_cmap("Set1", len(self.phase_colors))
+
+            # Create an image plot with the colors
+            for i, phase in enumerate(self.preds):
+                self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
+
+            self.canvas_nt_index.draw()
+            self.canvas_bar.draw()
+
+
     def onButtonClickStart(self):
         self.startButton.setStyleSheet("background-color: DarkGrey;")
         self.startButton.setEnabled(False)
@@ -983,11 +1043,6 @@ class Ui_iPhaser(QMainWindow):
                     self.surgeons.addItem(lineEdit.text())
                     self.surgeons.setCurrentIndex(-1)
 
-
-
-
-
-
     def onButtonClickStop(self):
         self.startButton.setStyleSheet("background-color: DarkGreen;")
         self.startButton.setEnabled(True)
@@ -1001,6 +1056,7 @@ class Ui_iPhaser(QMainWindow):
         # self.thread.wait(1)
 
         self.pred = "--"
+        self.NT_index = 0
         self.init_status()
         self.save_log_data()
         # self.DisplayTrainee.setText("--")
@@ -1013,6 +1069,9 @@ class Ui_iPhaser(QMainWindow):
         self.INDEPENDENT = True
         self.HELP = False
         self.STATUS = "--"
+        self.nt_indexes = [0]
+        self.transitions = []
+
 
     def pick_color(self):
         color = QColorDialog.getColor()
