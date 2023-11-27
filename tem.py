@@ -329,6 +329,9 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         self.stop_updates()
 
+
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
