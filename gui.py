@@ -874,7 +874,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.timer2 = QTimer(self)
         self.timer2.timeout.connect(self.update_plot)
-        self.timer2.start(1000)
+        self.timer2.start(1000)  #
 
         self.processing_thread = ImageProcessingThread(start_x=self.start_x,
                                                        end_x=self.end_x,
@@ -998,24 +998,25 @@ class Ui_iPhaser(QMainWindow):
                 self.transitions.append(0)
             self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))  #TODO
 
-            self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
-            self.ax_nt.yaxis.grid(True)  # Set y-grid on
-            self.ax_nt.xaxis.grid(False)  # Set x-grid off
-            self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
-
-            self.ax_bar.clear()
-            self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
-            self.ax_bar.set_ylim(0, 1)
-
-            # Create a color map to map phase names to colors
-            cmap = plt.get_cmap("Set1", len(self.phase_colors))
-
-            # Create an image plot with the colors
-            for i, phase in enumerate(self.preds):
-                self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
-
-            self.canvas_nt_index.draw()
-            self.canvas_bar.draw()
+            # TODO: uncomment this for updating figures
+            # self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
+            # self.ax_nt.yaxis.grid(True)  # Set y-grid on
+            # self.ax_nt.xaxis.grid(False)  # Set x-grid off
+            # self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
+            #
+            # self.ax_bar.clear()
+            # self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
+            # self.ax_bar.set_ylim(0, 1)
+            #
+            # # Create a color map to map phase names to colors
+            # cmap = plt.get_cmap("Set1", len(self.phase_colors))
+            #
+            # # Create an image plot with the colors
+            # for i, phase in enumerate(self.preds):
+            #     self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
+            #
+            # self.canvas_nt_index.draw()
+            # self.canvas_bar.draw()
 
 
     def onButtonClickStart(self):
