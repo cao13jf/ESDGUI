@@ -932,7 +932,7 @@ class Ui_iPhaser(QMainWindow):
                 self.rect1.setText(self.current_time)
                 self.rect2.setText(self.mentor.text())
                 self.rect3.setText(self.trainee.text())
-                self.rect4.setText(str(self.nt_indexes[-1]))
+                self.rect4.setText("{:.3f}".format(self.nt_indexes[-1]))
 
             else:
                 self.display_frame(frame)
