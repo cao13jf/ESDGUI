@@ -434,53 +434,47 @@ class Ui_iPhaser(QMainWindow):
         line.setStyleSheet("background-color: black;")
 
         ContentLowerWidget = QtWidgets.QWidget(self)
-        LowerHLayout = QtWidgets.QHBoxLayout()
-        ContentLowerWidget.setLayout(LowerHLayout)
+        LowerVLayout = QtWidgets.QVBoxLayout()
+        ContentLowerWidget.setLayout(LowerVLayout)
 
-        self.LowerLeftWidget = QtWidgets.QWidget(self)
-        LowerLeftVLayout = QtWidgets.QVBoxLayout()
-        self.LowerLeftWidget.setLayout(LowerLeftVLayout)
+        self.LowerUpperWidget = QtWidgets.QWidget(self)
+        LowerUpperLayout = QtWidgets.QHBoxLayout()
+        self.LowerUpperWidget.setLayout(LowerUpperLayout)
+        LowerVLayout.addWidget(self.LowerUpperWidget)
 
         # self.summaryReportOutput1 = QLabel()
         # self.summaryReportOutput1.setStyleSheet("background-color: white;")
         # self.summaryReportOutput1.setFixedSize(400, 200)
 
-        LowerLeftVLayout.addWidget(self.canvas_nt_index)
+        LowerUpperLayout.addWidget(self.canvas_nt_index)
         self.ax_nt = self.canvas_nt_index.figure.subplots()
         self.ax_nt.set_xlabel("Time (seconds)")
         self.ax_nt.set_ylabel("NT-index")
+        LowerUpperLayout.addWidget(self.canvas_table)
 
-        LowerLeftVLayout.addWidget(self.reportButton)
-
-        self.LowerRightWidget = QtWidgets.QWidget(self)
-        LowerRightVLayout = QtWidgets.QVBoxLayout()
-        self.LowerRightWidget.setLayout(LowerRightVLayout)
+        LowerVLayout.addWidget(self.reportButton)
 
         # self.summaryReportOutput2 = QLabel()
         # self.summaryReportOutput2.setStyleSheet("background-color: white;")
         # self.summaryReportOutput2.setFixedSize(400, 200)
 
-        self.fullReportButton = QPushButton("Get Full Report")
-        self.fullReportButton.setObjectName("FullReportButton")
-        self.fullReportButton.setFont(QFont("Arial", 16, QFont.Bold))
-        self.fullReportButton.setStyleSheet("QPushButton"
-                                            "{"
-                                            "background-color: green;"
-                                            "color: dark blue;"
-                                            "padding: 5px 15px;"
-                                            "margin-top: 10px;"
-                                            "outline: 1px;"
-                                            "min-width: 8em;"
-                                            "}")
-        self.fullReportButton.setFixedSize(200, 50)
-        self.fullReportButton.clicked.connect(self.generateReport)
+        # self.fullReportButton = QPushButton("Get Full Report")
+        # self.fullReportButton.setObjectName("FullReportButton")
+        # self.fullReportButton.setFont(QFont("Arial", 16, QFont.Bold))
+        # self.fullReportButton.setStyleSheet("QPushButton"
+        #                                     "{"
+        #                                     "background-color: green;"
+        #                                     "color: dark blue;"
+        #                                     "padding: 5px 15px;"
+        #                                     "margin-top: 10px;"
+        #                                     "outline: 1px;"
+        #                                     "min-width: 8em;"
+        #                                     "}")
+        # self.fullReportButton.setFixedSize(200, 50)
+        # self.fullReportButton.clicked.connect(self.generateReport)
 
-        LowerRightVLayout.addWidget(self.canvas_table)
 
-        LowerRightVLayout.addWidget(self.fullReportButton)
-
-        LowerHLayout.addWidget(self.LowerLeftWidget)
-        LowerHLayout.addWidget(self.LowerRightWidget)
+        # LowerRightVLayout.addWidget(self.fullReportButton)
 
 
         self.ContentVerticalLayout.addWidget(ContentUpperWidget)
@@ -999,23 +993,23 @@ class Ui_iPhaser(QMainWindow):
             self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))
 
             # TODO: uncomment this for updating figures
-            self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
-            self.ax_nt.yaxis.grid(True)  # Set y-grid on
-            self.ax_nt.xaxis.grid(False)  # Set x-grid off
-            self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
+            # self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
+            # self.ax_nt.yaxis.grid(True)  # Set y-grid on
+            # self.ax_nt.xaxis.grid(False)  # Set x-grid off
+            # self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
+            #
+            # self.ax_bar.clear()
+            # self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
+            # self.ax_bar.set_ylim(0, 1)
+            #
+            # # Create a color map to map phase names to colors
+            # cmap = plt.get_cmap("Set1", len(self.phase_colors))
+            #
+            # # Create an image plot with the colors
+            # for i, phase in enumerate(self.preds):
+            #     self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
 
-            self.ax_bar.clear()
-            self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
-            self.ax_bar.set_ylim(0, 1)
-
-            # Create a color map to map phase names to colors
-            cmap = plt.get_cmap("Set1", len(self.phase_colors))
-
-            # Create an image plot with the colors
-            for i, phase in enumerate(self.preds):
-                self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
-
-            self.canvas_nt_index.draw()
+            # self.canvas_nt_index.draw()
             # self.canvas_bar.draw()
 
 
@@ -1071,7 +1065,7 @@ class Ui_iPhaser(QMainWindow):
         self.HELP = False
         self.STATUS = "--"
         self.nt_indexes = [0]
-        self.transitions = []
+        self.transitions = [0]
 
 
     def pick_color(self):
