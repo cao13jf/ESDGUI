@@ -93,7 +93,7 @@ class ImageProcessingThread(QThread):
     def process_image(self, cv_img):
         # cv_img = img[self.start_x:self.end_x, self.start_y:self.end_y]  # Crop images
         rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        pred = self.phaseseg.phase_frame(rgb_image)  # TODO:可以用time查看該語句的延遲時間
+        pred = self.phaseseg.phase_frame(rgb_image)
 
         return pred
 
@@ -996,26 +996,26 @@ class Ui_iPhaser(QMainWindow):
                     self.transitions.append(self.transitions[-1])
             else:
                 self.transitions.append(0)
-            self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))  #TODO
+            self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))
 
             # TODO: uncomment this for updating figures
-            # self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
-            # self.ax_nt.yaxis.grid(True)  # Set y-grid on
-            # self.ax_nt.xaxis.grid(False)  # Set x-grid off
-            # self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
-            #
-            # self.ax_bar.clear()
-            # self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
-            # self.ax_bar.set_ylim(0, 1)
-            #
-            # # Create a color map to map phase names to colors
-            # cmap = plt.get_cmap("Set1", len(self.phase_colors))
-            #
-            # # Create an image plot with the colors
-            # for i, phase in enumerate(self.preds):
-            #     self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
-            #
-            # self.canvas_nt_index.draw()
+            self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
+            self.ax_nt.yaxis.grid(True)  # Set y-grid on
+            self.ax_nt.xaxis.grid(False)  # Set x-grid off
+            self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
+
+            self.ax_bar.clear()
+            self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
+            self.ax_bar.set_ylim(0, 1)
+
+            # Create a color map to map phase names to colors
+            cmap = plt.get_cmap("Set1", len(self.phase_colors))
+
+            # Create an image plot with the colors
+            for i, phase in enumerate(self.preds):
+                self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
+
+            self.canvas_nt_index.draw()
             # self.canvas_bar.draw()
 
 
@@ -1612,7 +1612,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture("dataset/Case_D.MP4")  # TODO: change camera
+        capture = cv2.VideoCapture("dataset/Case_D.MP4")
 
         # Default resolutions of the frame are obtained (system dependent)
         frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
