@@ -859,7 +859,9 @@ class Ui_iPhaser(QMainWindow):
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
-        self.camera = cv2.VideoCapture("dataset/Case_D.MP4")
+        self.camera = cv2.VideoCapture(0)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         self.process_frames = False
 
         self.timer = QTimer(self)
@@ -914,7 +916,7 @@ class Ui_iPhaser(QMainWindow):
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
         ret, frame = self.camera.read()
-        time.sleep(0.05)
+        # time.sleep(0.05)
         if ret:
             frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
@@ -1606,13 +1608,16 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture("dataset/Case_D.MP4")
+        capture = cv2.VideoCapture(0)
 
         # Default resolutions of the frame are obtained (system dependent)
-        frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        # frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
         # fps = int(capture.get(cv2.CAP_PROP_FPS))
-        fps = 30
+        # fps = 30
+        frame_width = 1920
+        frame_height = 1080
+        fps = 50
         capture.release()
         return frame_width, frame_height, fps
 
