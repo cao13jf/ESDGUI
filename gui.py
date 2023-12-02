@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib import ticker
 
 from utils.guis import PhaseCom, draw_segmentation, add_text
 from utils.parser import ParserUse
@@ -99,6 +100,41 @@ class ImageProcessingThread(QThread):
 
     def add_frame(self, frame):
         self.frames_to_process.append(frame)
+
+
+# TODO: Plot thread
+class PlotCurveThread(QThread):
+    ploted_curve_array = pyqtSignal(np.ndarray)
+
+    def __init__(self):
+        super().__init__()
+        self.processing_interval = 2
+        self.data_to_plot = []
+
+    def run(self):
+        while True:
+            if len(self.data_to_plot) >= self.processing_interval:
+                cur_data = self.data_to_plot[-1]
+                self.data_to_plot = []
+                fig = Figure(figsize=(400/80, 200/80), dpi=80)
+                canvas = FigureCanvas(fig)
+                ax = fig.add_subplot(1, 1, 1)
+                ax.plot(list(range(cur_data.shape[0])), cur_data, linewidth=2.5)
+                ax.set_xlabel("Time / Second")
+                ax.set_ylabel("Normalized Transition Index")
+                ax.grid(True, axis='y')
+                ax.set_xlim(0, cur_data.shape[0] * 5 / 4)
+                ax.set_ylim(0, np.max(cur_data) * 5 / 4)
+                ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
+                # Render the figure to a RGB array
+                canvas.draw()
+                width, height = fig.get_size_inches() * fig.get_dpi()
+                image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
+                self.ploted_curve_array.emit(image)
+
+    def add_data(self, data):
+        self.data_to_plot.append(data)
 
 
 class Ui_iPhaser(QMainWindow):
@@ -314,6 +350,7 @@ class Ui_iPhaser(QMainWindow):
         self.hour = 0
         self.minute = 0
         self.second = 0
+        self.curve_array = None
         e2 = QLabel('{:02d}'.format(self.hour))
         e2.setAlignment(Qt.AlignCenter)
         e2.setObjectName("DurationHour")
@@ -400,8 +437,8 @@ class Ui_iPhaser(QMainWindow):
         upperHlayout = QtWidgets.QHBoxLayout()
         upperHlayout.addWidget(upperLeftWidget)
 
-        self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))
-        self.canvas_nt_index = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
+        # TODO: update plot canvas
+        self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))  # Update canvas
         self.canvas_table = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
 
         # self.summaryReportOutput3 = QtWidgets.QWidget(self)
@@ -442,15 +479,10 @@ class Ui_iPhaser(QMainWindow):
         self.LowerUpperWidget.setLayout(LowerUpperLayout)
         LowerVLayout.addWidget(self.LowerUpperWidget)
 
-        # self.summaryReportOutput1 = QLabel()
-        # self.summaryReportOutput1.setStyleSheet("background-color: white;")
-        # self.summaryReportOutput1.setFixedSize(400, 200)
-
-        LowerUpperLayout.addWidget(self.canvas_nt_index)
-        self.ax_nt = self.canvas_nt_index.figure.subplots()
-        self.ax_nt.set_xlabel("Time (seconds)")
-        self.ax_nt.set_ylabel("NT-index")
-        LowerUpperLayout.addWidget(self.canvas_table)
+        self.canvas_nt = QLabel()
+        self.canvas_nt.setStyleSheet("background-color: white;")
+        self.canvas_nt.setFixedSize(400, 200)
+        LowerVLayout.addWidget(self.canvas_nt)
 
         LowerVLayout.addWidget(self.reportButton)
 
@@ -859,7 +891,7 @@ class Ui_iPhaser(QMainWindow):
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
-        self.camera = cv2.VideoCapture(0)
+        self.camera = cv2.VideoCapture("dataset/Case_D.MP4")
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         self.process_frames = False
@@ -868,10 +900,13 @@ class Ui_iPhaser(QMainWindow):
         self.timer.timeout.connect(self.update_image)
         self.timer.start(30)
 
-        self.timer2 = QTimer(self)
-        self.timer2.timeout.connect(self.update_plot)
-        self.timer2.start(1000)  #
+        # self.timer2 = QTimer(self)
+        # self.timer2.timeout.connect(self.update_plot)
+        # self.timer2.start(1000)  #
 
+
+
+        self.canvas_draw_thread = None
         self.processing_thread = ImageProcessingThread(start_x=self.start_x,
                                                        end_x=self.end_x,
                                                        start_y=self.start_y,
@@ -880,6 +915,11 @@ class Ui_iPhaser(QMainWindow):
         self.processing_thread.processed_frame.connect(self.update_pred)
         self.processing_thread.moveToThread(QCoreApplication.instance().thread())
         self.processing_thread.start()
+
+        self.plot_thread = PlotCurveThread()
+        self.plot_thread.ploted_curve_array.connect(self.update_plot)
+        self.plot_thread.moveToThread(QCoreApplication.instance().thread())
+        self.plot_thread.start()
 
     def windowResized(self, event):
         # Get the current window size
@@ -921,7 +961,10 @@ class Ui_iPhaser(QMainWindow):
             frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
                 self.processing_thread.add_frame(frame)
+                self.plot_thread.add_data(np.array(self.nt_indexes))
                 self.display_frame(frame)
+                if self.curve_array is not None:
+                    self.display_curve(self.curve_array)
 
         # update the online analytics box
                 self.current_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
@@ -958,6 +1001,15 @@ class Ui_iPhaser(QMainWindow):
         p = QPixmap.fromImage(p)
         self.DisplayVideo.setPixmap(p)
 
+    def display_curve(self, curve_frame):
+        cirve_frame = cv2.cvtColor(curve_frame, cv2.COLOR_RGB2BGR)
+        h, w, ch = cirve_frame.shape
+        bytes_per_line = ch * w
+        convert_to_Qt_format = QtGui.QImage(cirve_frame.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        # p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
+        p = QPixmap.fromImage(convert_to_Qt_format)
+        self.canvas_nt.setPixmap(p)
+
     def update_pred(self, pred):
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
@@ -979,27 +1031,25 @@ class Ui_iPhaser(QMainWindow):
         self.phase3_state.setChecked(states[2])
         self.phase4_state.setChecked(states[3])
 
-
-    def update_plot(self):
-        if self.WORKING:
-            if len(self.log_data) > 1:
-                prev_pred = self.log_data[-2][-1]
-                cur_pred = self.log_data[-1][-1]
-                self.preds.append(self.pred)
-                if prev_pred != cur_pred:
-                    self.transitions.append(self.transitions[-1] + 1)
-                else:
-                    self.transitions.append(self.transitions[-1])
+        if len(self.log_data) > 1:
+            prev_pred = self.log_data[-2][-1]
+            cur_pred = self.log_data[-1][-1]
+            self.preds.append(self.pred)
+            if prev_pred != cur_pred:
+                self.transitions.append(self.transitions[-1] + 1)
             else:
-                self.transitions.append(0)
-            self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))
+                self.transitions.append(self.transitions[-1])
+        else:
+            self.transitions.append(0)
+        self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))
+
+
+    def update_plot(self, plotted_cuvre_array):
+
+        self.curve_array = plotted_cuvre_array
+
 
             # TODO: uncomment this for updating figures
-            # self.ax_nt.plot(range(len(self.nt_indexes)), self.nt_indexes, color="orange")
-            # self.ax_nt.yaxis.grid(True)  # Set y-grid on
-            # self.ax_nt.xaxis.grid(False)  # Set x-grid off
-            # self.ax_nt.set_xlim(1, len(self.nt_indexes) * 6 / 5)
-            #
             # self.ax_bar.clear()
             # self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
             # self.ax_bar.set_ylim(0, 1)
@@ -1608,7 +1658,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture(0)
+        capture = cv2.VideoCapture("dataset/Case_D.MP4")
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
