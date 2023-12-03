@@ -413,19 +413,19 @@ class Ui_iPhaser(QMainWindow):
         group3.setStyleSheet("QGroupBox#ReportGroup{border:0;}")
         hbox_2 = QHBoxLayout()
         hbox_2.setObjectName("ReportLayout")
-        self.reportButton = QPushButton("Generate Report")
+        self.reportButton = QPushButton("Generate AI Report")
         self.reportButton.setObjectName("ReportButton")
-        self.reportButton.setFont(QFont("Arial", 16, QFont.Bold))
+        self.reportButton.setFont(QFont("Arial", 18, QFont.Bold))
         self.reportButton.setStyleSheet("QPushButton"
                                         "{"
                                         "background-color: green;"
-                                        "color: dark blue;"
+                                        "color: white;"
                                         "padding: 5px 15px;"
                                         "margin-top: 10px;"
                                         "outline: 1px;"
                                         "min-width: 8em;"
                                         "}")
-        self.reportButton.setFixedSize(200, 50)
+        self.reportButton.setFixedSize(280, 70)
         self.reportButton.clicked.connect(self.generateReport)
         hbox_2.addWidget(self.reportButton)
         hbox_2.setAlignment(Qt.AlignCenter)
@@ -438,16 +438,16 @@ class Ui_iPhaser(QMainWindow):
         upperHlayout.addWidget(upperLeftWidget)
 
         # TODO: update plot canvas
-        self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))  # Update canvas
-        self.canvas_table = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
+        # self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))  # Update canvasf
+        # self.canvas_table = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
 
         # self.summaryReportOutput3 = QtWidgets.QWidget(self)
         # self.summaryReportOutput3.setStyleSheet("background-color: white;")
         # self.summaryReportOutput3.setFixedSize(400, 50)
-        upperHlayout.addWidget(self.canvas_bar)
-        self.ax_bar = self.canvas_bar.figure.subplots()
-        self.ax_bar.set_axis_off()
-        self.phase_colors = {"idle": "blue", "marking": "green", "injection": "yellow", "dissection": "red"}
+        upperHlayout.addWidget(self.reportButton)
+        # self.ax_bar = self.canvas_bar.figure.subplots()
+        # self.ax_bar.set_axis_off()
+        # self.phase_colors = {"idle": "blue", "marking": "green", "injection": "yellow", "dissection": "red"}
 
         ContentUpperWidget.setLayout(upperHlayout)
 
@@ -484,7 +484,7 @@ class Ui_iPhaser(QMainWindow):
         self.canvas_nt.setFixedSize(400, 200)
         LowerVLayout.addWidget(self.canvas_nt)
 
-        LowerVLayout.addWidget(self.reportButton)
+        LowerVLayout.setAlignment(Qt.AlignCenter)
 
         # self.summaryReportOutput2 = QLabel()
         # self.summaryReportOutput2.setStyleSheet("background-color: white;")
@@ -870,15 +870,16 @@ class Ui_iPhaser(QMainWindow):
         self.centralwidget.resizeEvent = self.windowResized
 
         self.AiEndoLabel = QtWidgets.QLabel(self.centralwidget)
+        self.AiEndoLabel.setFixedSize(300, 100)
         self.AiEndoLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)  # Align to the left bottom corner
         self.AiEndoLabel.setObjectName("AiEndoLabel")
         # Set the size policy of the image label to Ignored
-        self.AiEndoLabel.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        # self.AiEndoLabel.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
         # Load the image
         AiEndo_image_path = "images/AI-Endo.jpg"  # Replace with the actual path to your image
         Ai_Endo_image = QtGui.QPixmap(AiEndo_image_path)
         # Resize the image to fit within the available space while maintaining the aspect ratio
-        scaled_Ai_Endo_Image = Ai_Endo_image.scaled(100, 100)
+        scaled_Ai_Endo_Image = Ai_Endo_image.scaled(300, 100)
         # Set the scaled image as the pixmap for the image label
         self.AiEndoLabel.setPixmap(scaled_Ai_Endo_Image)
         # Adjust the position and size of the image label when the main window is resized
