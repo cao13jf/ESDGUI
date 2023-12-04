@@ -43,15 +43,21 @@ DEFAULT_STYLE = """
                 """
 COMBOBOX = """
             QComboBox {
-                border: 1px solid grey;
+                border: 1px #336699;
                 border-radius: 3px;
                 padding: 1px 2px 1px 2px;  
                 min-width: 10em;
                 min-height: 20px;  
+                background-color: #336699;
+                width: 250px;
+                height: 30px;
             }
             QComboBox QAbstractItemView::item 
             {
                 min-height: 20px;
+                background-color: #336699;
+                text-align: center;
+                color: white;
             }
         """
 
@@ -163,8 +169,6 @@ class Ui_iPhaser(QMainWindow):
         self.down_ratio = 1  # cfg.down_ratio
         # Statue parameters
         self.init_status()
-        Vblocks = ['case information', 'phase recognition', 'online analytics']
-        Hblocks = ['training session']
         self.FRAME_WIDTH, self.FRAME_HEIGHT, self.stream_fps = self.get_frame_size()
         self.MANUAL_FRAMES = self.stream_fps * cfg.manual_set_fps_ratio
         self.manual_frame = 0
@@ -355,7 +359,7 @@ class Ui_iPhaser(QMainWindow):
         e2.setAlignment(Qt.AlignCenter)
         e2.setObjectName("DurationHour")
         e2.setFont(QFont("Arial", 16, QFont.Bold))
-        e2.setStyleSheet("background-color: white;")
+        e2.setStyleSheet("background-color: #336699; color: white;")
         self.duraHour = e2
         e3 = QLabel("hrs:")
         e3.setObjectName("DurationHourUnit")
@@ -365,7 +369,7 @@ class Ui_iPhaser(QMainWindow):
         e4.setAlignment(Qt.AlignCenter)
         e4.setObjectName("DurationMinute")
         e4.setFont(QFont("Arial", 16, QFont.Bold))
-        e4.setStyleSheet("background-color: white;")
+        e4.setStyleSheet("background-color: #336699;  color: white;")
         self.duraMinute = e4
         e5 = QLabel("min:")
         e5.setObjectName("DurationMinuteUnit")
@@ -375,7 +379,7 @@ class Ui_iPhaser(QMainWindow):
         e6.setAlignment(Qt.AlignCenter)
         e6.setObjectName("DurationSecond")
         e6.setFont(QFont("Arial", 16, QFont.Bold))
-        e6.setStyleSheet("background-color: white;")
+        e6.setStyleSheet("background-color: #336699;  color: white;")
         self.duraSecond = e6
         e7 = QLabel("sec")
         e7.setObjectName("DurationSecondUnit")
@@ -398,7 +402,7 @@ class Ui_iPhaser(QMainWindow):
         e8 = QLabel("Surgeons:")
         e8.setObjectName("Surgeons")
         e8.setFont(QFont("Arial", 16, QFont.Bold))
-        e8.setStyleSheet("color: white;")
+        e8.setStyleSheet("color: white;  color: white；")
         # e9.setAlignment(Qt.AlignCenter)
         e10 = QLabel()
         hbox_1.addWidget(e8)
@@ -585,7 +589,7 @@ class Ui_iPhaser(QMainWindow):
         e2.setFixedHeight(35)
         e2.setFixedWidth(180)
         e2.setObjectName("PID1")
-        e2.setStyleSheet("background: white;border-radius:5px;color: black")
+        e2.setStyleSheet("background: #336699;border-radius:5px;color: white")
         e2.setAlignment(Qt.AlignCenter)
         e2.setFont(QFont("Arial", 14))
         e2.setText("Jenny")
@@ -600,7 +604,7 @@ class Ui_iPhaser(QMainWindow):
         e4.setFixedHeight(35)
         e4.setFixedWidth(180)
         e4.setObjectName("PID2")
-        e4.setStyleSheet("background: white;border-radius:5px;color:black")
+        e4.setStyleSheet("background: #336699;border-radius:5px;color: white")
         e4.setAlignment(Qt.AlignCenter)
         e4.setFont(QFont("Arial", 14))
         e4.setText("798xxx(x)")
@@ -617,7 +621,7 @@ class Ui_iPhaser(QMainWindow):
         e6.setFixedHeight(35)
         e6.setFixedWidth(105)
         e6.setObjectName("PIDDateYear")
-        e6.setStyleSheet("background-color: white;border-radius:5px;color:black")
+        e6.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e6.setAlignment(Qt.AlignCenter)
         e6.setFont(QFont("Arial", 14))
         e6.setText("2023")
@@ -632,7 +636,7 @@ class Ui_iPhaser(QMainWindow):
         e8.setFixedHeight(35)
         e8.setFixedWidth(105)
         e8.setObjectName("PIDDateMonth")
-        e8.setStyleSheet("background-color: white;border-radius:5px;color:black")
+        e8.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e8.setAlignment(Qt.AlignCenter)
         e8.setFont(QFont("Arial", 14))
         e8.setText("Nov")
@@ -647,7 +651,7 @@ class Ui_iPhaser(QMainWindow):
         e10.setFixedHeight(35)
         e10.setFixedWidth(105)
         e10.setObjectName("PIDDateDay")
-        e10.setStyleSheet("background-color: white;border-radius:5px;color: black")
+        e10.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e10.setAlignment(Qt.AlignCenter)
         e10.setFont(QFont("Arial", 14))
         e10.setText("10")
@@ -786,11 +790,12 @@ class Ui_iPhaser(QMainWindow):
 
         self.a1 = QLabel("Predicted phase")
         self.a1.setFont(QFont("Arial", 16, QFont.Bold))
+        self.a1.setStyleSheet("color: white")
         self.a2 = QLineEdit()
         self.a2.setAlignment(Qt.AlignCenter)
         self.a2.setEnabled(False)
         self.a2.setFont(QFont("Arial", 26, QFont.Bold))
-        self.a2.setStyleSheet("color: #D2C200;")
+        self.a2.setStyleSheet("color: #ff9900;")
         self.VLayout3 = QtWidgets.QVBoxLayout()
         self.VLayout3.addWidget(widget3)
         self.VLayout3.addWidget(line)
@@ -819,19 +824,19 @@ class Ui_iPhaser(QMainWindow):
 
         # Create the gray rectangles
         self.rect1 = QLineEdit()
-        self.rect1.setStyleSheet("background-color: gray; color: white;")
+        self.rect1.setStyleSheet("background-color: #336699; color: white;")
         self.rect1.setFixedWidth(300)
         self.rect1.setFixedHeight(30)
         self.rect2 = QLineEdit()
-        self.rect2.setStyleSheet("background-color: gray; color: white;")
+        self.rect2.setStyleSheet("background-color: #336699; color: white;")
         self.rect2.setFixedWidth(300)
         self.rect2.setFixedHeight(30)
         self.rect3 = QLineEdit()
-        self.rect3.setStyleSheet("background-color: gray; color: white;")
+        self.rect3.setStyleSheet("background-color: #336699; color: white;")
         self.rect3.setFixedWidth(300)
         self.rect3.setFixedHeight(30)
         self.rect4 = QLineEdit()
-        self.rect4.setStyleSheet("background-color: gray; color: white;")
+        self.rect4.setStyleSheet("background-color: #336699; color: white;")
         self.rect4.setFixedWidth(300)
         self.rect4.setFixedHeight(30)
 
@@ -1190,7 +1195,7 @@ class Ui_iPhaser(QMainWindow):
         e3 = QLineEdit()
         e3.setFixedHeight(35)
         e3.setObjectName("MentorInput")
-        e3.setStyleSheet("background-color: white;color:black")
+        e3.setStyleSheet("background-color: #336699;color: white")
         e3.setFont(QFont("Arial", 14))
         e3.setText("Jeffery")
         e3.setAlignment(Qt.AlignCenter)
@@ -1198,7 +1203,7 @@ class Ui_iPhaser(QMainWindow):
         e4 = QLineEdit()
         e4.setFixedHeight(35)
         e4.setObjectName("LesionLocationInput")
-        e4.setStyleSheet("background-color: white;color:black")
+        e4.setStyleSheet("background-color: #336699;color: white")
         e4.setFont(QFont("Arial", 14))
         e4.setText("Stomach")
         e4.setAlignment(Qt.AlignCenter)
@@ -1214,7 +1219,7 @@ class Ui_iPhaser(QMainWindow):
         e7 = QLineEdit()
         e7.setFixedHeight(35)
         e7.setObjectName("TraineeInput")
-        e7.setStyleSheet("background-color: white;color:black")
+        e7.setStyleSheet("background-color: #336699;color: white")
         e7.setFont(QFont("Arial", 14))
         e7.setText("John")
         e7.setAlignment(Qt.AlignCenter)
@@ -1222,7 +1227,7 @@ class Ui_iPhaser(QMainWindow):
         e8 = QLineEdit()
         e8.setFixedHeight(35)
         e8.setObjectName("BedInput")
-        e8.setStyleSheet("background-color: white;color:black")
+        e8.setStyleSheet("background-color: #336699;color: white")
         e8.setFont(QFont("Arial", 14))
         e8.setText("1")
         e8.setAlignment(Qt.AlignCenter)
@@ -1566,11 +1571,12 @@ class Ui_iPhaser(QMainWindow):
 
         self.a1 = QLabel("Predicted phase")
         self.a1.setFont(QFont("Arial", 16, QFont.Bold))
+        self.a1.setStyleSheet("color: white;")
         self.a2 = QLineEdit()
         self.a2.setAlignment(Qt.AlignCenter)
         self.a2.setEnabled(False)
         self.a2.setFont(QFont("Arial", 26, QFont.Bold))
-        self.a2.setStyleSheet("color: #D2C200;")
+        self.a2.setStyleSheet("color: #ff9900;")
         self.VLayout3 = QtWidgets.QVBoxLayout()
         self.VLayout3.addWidget(widget1)
         self.VLayout3.addWidget(line)
