@@ -107,8 +107,6 @@ class ImageProcessingThread(QThread):
     def add_frame(self, frame):
         self.frames_to_process.append(frame)
 
-
-# TODO: Plot thread
 class PlotCurveThread(QThread):
     ploted_curve_array = pyqtSignal(np.ndarray)
 
@@ -122,7 +120,7 @@ class PlotCurveThread(QThread):
             if len(self.data_to_plot) >= self.processing_interval:
                 cur_data = self.data_to_plot[-1]
                 self.data_to_plot = []
-                fig = Figure(figsize=(400/80, 200/80), dpi=80)
+                fig = Figure(figsize=(350/80, 300/80), dpi=80)
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
                 ax.plot(list(range(cur_data.shape[0])), cur_data, linewidth=2.5)
@@ -193,6 +191,7 @@ class Ui_iPhaser(QMainWindow):
         self.surgeons.setCurrentIndex(-1)
         self.pred = "--"
         self.preds = []
+        self.pred_phases = []
         self.nt_indexes = [0]
         self.transitions = []
         self.pop_image = {}
@@ -440,8 +439,6 @@ class Ui_iPhaser(QMainWindow):
         upperLeftWidget.setLayout(egrid)
         upperHlayout = QtWidgets.QHBoxLayout()
         upperHlayout.addWidget(upperLeftWidget)
-
-        # TODO: update plot canvas
         # self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))  # Update canvasf
         # self.canvas_table = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
 
@@ -501,6 +498,7 @@ class Ui_iPhaser(QMainWindow):
         header.setStyleSheet("background-color: darkgrey; color: black")
         header.setSectionResizeMode(QHeaderView.Stretch)
         header.setFixedHeight(50)
+        # TODO: update content
         self.table.setFixedSize(390, 300)
         self.table.setRowCount(5)
         self.table.setItem(0, 0, QTableWidgetItem("Marking"))
@@ -1004,6 +1002,7 @@ class Ui_iPhaser(QMainWindow):
                 self.display_frame(frame)
                 if self.curve_array is not None:
                     self.display_curve(self.curve_array)
+                self.update_table()
 
         # update the online analytics box
                 self.current_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
@@ -1048,6 +1047,7 @@ class Ui_iPhaser(QMainWindow):
         # p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
         p = QPixmap.fromImage(convert_to_Qt_format)
         self.canvas_nt.setPixmap(p)
+        self.canvas_nt.setContentsMargins(30, 5, 5, 30)
 
     def update_pred(self, pred):
         self.manual_frame = self.manual_frame - 1
@@ -1071,8 +1071,9 @@ class Ui_iPhaser(QMainWindow):
         self.phase4_state.setChecked(states[3])
 
         if len(self.log_data) > 1:
-            prev_pred = self.log_data[-2][-1]
-            cur_pred = self.log_data[-1][-1]
+            prev_pred = self.log_data[-2][-5]
+            cur_pred = self.log_data[-1][-5]
+            self.pred_phases.append(cur_pred)
             self.preds.append(self.pred)
             if prev_pred != cur_pred:
                 self.transitions.append(self.transitions[-1] + 1)
@@ -1088,31 +1089,65 @@ class Ui_iPhaser(QMainWindow):
         self.curve_array = plotted_cuvre_array
 
 
-            # TODO: uncomment this for updating figures
-            # self.ax_bar.clear()
-            # self.ax_bar.set_xlim(0, len(self.nt_indexes) * 6 / 5)
-            # self.ax_bar.set_ylim(0, 1)
-            #
-            # # Create a color map to map phase names to colors
-            # cmap = plt.get_cmap("Set1", len(self.phase_colors))
-            #
-            # # Create an image plot with the colors
-            # for i, phase in enumerate(self.preds):
-            #     self.ax_bar.bar(i, 1, color=self.phase_colors[phase], width=1.0)
+    def update_table(self):
+        # TODO: update table here
+        if self.WORKING and len(self.pred_phases) > 0:
+            num = QTableWidgetItem(str(self.pred_phases.count("marking")))
+            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("marking") / len(self.pred_phases)))
+            num.setFont(QFont("", 16))
+            num_ratio.setFont(QFont("", 16))
+            num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            num_ratio.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            self.table.setItem(0, 1, num)
+            self.table.setItem(0, 2, num_ratio)
 
-            # self.canvas_nt_index.draw()
-            # self.canvas_bar.draw()
+            num = QTableWidgetItem(str(self.pred_phases.count("injection")))
+            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("injection") / len(self.pred_phases)))
+            num.setFont(QFont("", 16))
+            num_ratio.setFont(QFont("", 16))
+            num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            num_ratio.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            self.table.setItem(1, 1, num)
+            self.table.setItem(1, 2, num_ratio)
 
+            num = QTableWidgetItem(str(self.pred_phases.count("dissection")))
+            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("dissection") / len(self.pred_phases)))
+            num.setFont(QFont("", 16))
+            num_ratio.setFont(QFont("", 16))
+            num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            num_ratio.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            self.table.setItem(2, 1, num)
+            self.table.setItem(2, 2, num_ratio)
+
+            num = QTableWidgetItem(str(self.pred_phases.count("idle")))
+            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("idle") / len(self.pred_phases)))
+            num.setFont(QFont("", 16))
+            num_ratio.setFont(QFont("", 16))
+            num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            num_ratio.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            self.table.setItem(3, 1, num)
+            self.table.setItem(3, 2, num_ratio)
+
+            num = QTableWidgetItem(str(len(self.pred_phases)))
+            num_ratio = QTableWidgetItem("   /   ")
+            num.setFont(QFont("", 16))
+            num_ratio.setFont(QFont("", 16))
+            num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            num_ratio.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            self.table.setItem(4, 1, num)
+            self.table.setItem(4, 2, num_ratio)
 
     def onButtonClickStart(self):
         self.startButton.setStyleSheet("background-color: DarkGrey;")
         self.startButton.setEnabled(False)
-        self.stopButton.setStyleSheet("background-color: DarkGreen;")
+        self.stopButton.setStyleSheet("background-color: DarkRed;")
         self.stopButton.setEnabled(True)
         self.canvas.clear()
         self.flag = True
         self.WORKING = True
         self.video = False
+        self.log_data = []
+        self.pred_phases = []
         # video_file_name = os.path.join(self.save_folder, self.e1.text().replace(":", "_").replace(" ",
         #                                                                                           "-") + "_" + self.start_time.replace(
         #     ":", "-") + ".avi")
@@ -1157,6 +1192,7 @@ class Ui_iPhaser(QMainWindow):
         self.STATUS = "--"
         self.nt_indexes = [0]
         self.transitions = [0]
+        self.pred_phases = []
 
 
     def pick_color(self):
