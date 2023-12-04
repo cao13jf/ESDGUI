@@ -288,31 +288,31 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton.clicked.connect(self.onButtonClickStop)
 
         self.layoutWidget1 = QtWidgets.QWidget(self)
-        self.layoutWidget1.setGeometry(QtCore.QRect(500, 20, 440, 225))
+        self.layoutWidget1.setGeometry(QtCore.QRect(500, 45, 440, 225))
         self.layoutWidget1.setObjectName("layoutWidget1")
         self.verticalLayout1 = QtWidgets.QHBoxLayout(self.layoutWidget1)
         self.verticalLayout1.setObjectName("verticalLayout1")
 
         self.layoutWidget2 = QtWidgets.QWidget(self)
-        self.layoutWidget2.setGeometry(QtCore.QRect(30, 600, 900, 600))
+        self.layoutWidget2.setGeometry(QtCore.QRect(30, 620, 910, 600))
         self.layoutWidget2.setObjectName("layoutWidget2")
         self.verticalLayout2 = QtWidgets.QVBoxLayout(self.layoutWidget2)
         self.verticalLayout2.setObjectName("verticalLayout2")
 
         self.layoutWidget3 = QtWidgets.QWidget(self)
-        self.layoutWidget3.setGeometry(QtCore.QRect(30, 20, 440, 225))
+        self.layoutWidget3.setGeometry(QtCore.QRect(30, 45, 440, 270))
         self.layoutWidget3.setObjectName("layoutWidget3")
         self.verticalLayout3 = QtWidgets.QVBoxLayout(self.layoutWidget3)
         self.verticalLayout3.setObjectName("verticalLayout3")
 
         self.layoutWidget4 = QtWidgets.QWidget(self)
-        self.layoutWidget4.setGeometry(QtCore.QRect(30, 225, 440, 400))
+        self.layoutWidget4.setGeometry(QtCore.QRect(30, 275, 440, 400))
         self.layoutWidget4.setObjectName("layoutWidget4")
         self.verticalLayout4 = QtWidgets.QVBoxLayout(self.layoutWidget4)
         self.verticalLayout4.setObjectName("verticalLayout4")
 
         self.layoutWidget5 = QtWidgets.QWidget(self)
-        self.layoutWidget5.setGeometry(QtCore.QRect(500, 225, 440, 400))
+        self.layoutWidget5.setGeometry(QtCore.QRect(500, 275, 440, 400))
         self.layoutWidget5.setObjectName("layoutWidget5")
         self.verticalLayout5 = QtWidgets.QVBoxLayout(self.layoutWidget5)
         self.verticalLayout5.setObjectName("verticalLayout5")
@@ -795,7 +795,7 @@ class Ui_iPhaser(QMainWindow):
         self.a2.setAlignment(Qt.AlignCenter)
         self.a2.setEnabled(False)
         self.a2.setFont(QFont("Arial", 26, QFont.Bold))
-        self.a2.setStyleSheet("color: #ff9900;")
+        self.a2.setStyleSheet("color: #ff9900; background-color: #336699;")
         self.VLayout3 = QtWidgets.QVBoxLayout()
         self.VLayout3.addWidget(widget3)
         self.VLayout3.addWidget(line)
@@ -893,11 +893,6 @@ class Ui_iPhaser(QMainWindow):
 
         # end of online analytics
 
-
-        # Vpercent = 100 / len(Vblocks)
-        # for i in Vblocks:
-        #     self.setVLayout(i, Vpercent)
-
         self.imageLabel = QtWidgets.QLabel(self.centralwidget)
         self.imageLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.AlignLeft)  # Align to the left bottom corner
         self.imageLabel.setObjectName("CUHK_logol")
@@ -986,14 +981,14 @@ class Ui_iPhaser(QMainWindow):
         imageWidth = self.imageLabel.pixmap().width()
         imageHeight = self.imageLabel.pixmap().height()
         imageX = 50  # Align to the left side of the window
-        imageY = height - imageHeight - 50  # Align to the bottom of the window
+        imageY = height - imageHeight - 20  # Align to the bottom of the window
 
         # Set the new geometry of the image label
         self.imageLabel.setGeometry(QtCore.QRect(imageX, imageY, imageWidth, imageHeight))
         self.AiEndoLabel.setGeometry(QtCore.QRect(imageX+175, imageY, imageWidth, imageHeight))
 
-        self.startButton.setGeometry(QtCore.QRect(650, self.height() - 150, 80, 80))
-        self.stopButton.setGeometry(QtCore.QRect(750, self.height() - 150, 80, 80))
+        self.startButton.setGeometry(QtCore.QRect(650, self.height() - 110, 80, 80))
+        self.stopButton.setGeometry(QtCore.QRect(800, self.height() - 110, 80, 80))
 
     def update_image(self):
         """Convert from an opencv image to QPixmap"""
@@ -1569,14 +1564,14 @@ class Ui_iPhaser(QMainWindow):
         line.setFrameShadow(QFrame.Sunken)
         line.setStyleSheet("background-color: black;")
 
-        self.a1 = QLabel("Predicted phase")
+        self.a1 = QLabel("AI predicted phase")
         self.a1.setFont(QFont("Arial", 16, QFont.Bold))
         self.a1.setStyleSheet("color: white;")
         self.a2 = QLineEdit()
         self.a2.setAlignment(Qt.AlignCenter)
         self.a2.setEnabled(False)
         self.a2.setFont(QFont("Arial", 26, QFont.Bold))
-        self.a2.setStyleSheet("color: #ff9900;")
+        self.a2.setStyleSheet("color: #ff9900; background-color: #336699;")
         self.VLayout3 = QtWidgets.QVBoxLayout()
         self.VLayout3.addWidget(widget1)
         self.VLayout3.addWidget(line)
