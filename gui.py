@@ -45,19 +45,20 @@ COMBOBOX = """
             QComboBox {
                 border: 1px #336699;
                 border-radius: 3px;
-                padding: 1px 2px 1px 2px;  
-                min-width: 10em;
-                min-height: 20px;  
+                padding: 1px 2px 1px 2px;
                 background-color: #336699;
+                color: white;
                 width: 250px;
                 height: 30px;
             }
-            QComboBox QAbstractItemView::item 
-            {
-                min-height: 20px;
+            QComboBox QAbstractItemView {
                 background-color: #336699;
-                text-align: center;
                 color: white;
+            }
+            QComboBox QAbstractItemView::item {
+                height: 80px; 
+                font-size: 18px;
+                padding: 5px 10px;
             }
         """
 
@@ -121,7 +122,7 @@ class PlotCurveThread(QThread):
             if len(self.data_to_plot) >= self.processing_interval:
                 cur_data = self.data_to_plot[-1]
                 self.data_to_plot = []
-                fig = Figure(figsize=(350/80, 300/80), dpi=80)
+                fig = Figure(figsize=(450/80, 350/80), dpi=300)
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
                 ax.plot(list(range(cur_data.shape[0])), cur_data, linewidth=4)
@@ -441,7 +442,7 @@ class Ui_iPhaser(QMainWindow):
         upperLeftWidget.setLayout(egrid)
         upperHlayout = QtWidgets.QHBoxLayout()
         upperHlayout.addWidget(upperLeftWidget)
-        # self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))  # Update canvasf
+        # self.canvas_bar = FigureCanvas(Figure(figsize=(400/80, 50/80), dpi=80))  # Update canvas
         # self.canvas_table = FigureCanvas(Figure(figsize=(400/80, 200/80), dpi=80))
 
         # self.summaryReportOutput3 = QtWidgets.QWidget(self)
@@ -471,7 +472,7 @@ class Ui_iPhaser(QMainWindow):
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
-        line.setStyleSheet("background-color: black;")
+        line.setStyleSheet("background-color: white;")
 
         ContentLowerWidget = QtWidgets.QWidget(self)
         LowerVLayout = QtWidgets.QVBoxLayout()
@@ -485,9 +486,13 @@ class Ui_iPhaser(QMainWindow):
         self.LowerLowerWidget = QtWidgets.QWidget(self)
         LowerLowerLayout = QtWidgets.QHBoxLayout()
         self.LowerLowerWidget.setLayout(LowerLowerLayout)
-        self.canvas_nt = QLabel()
-        self.canvas_nt.setStyleSheet("background-color: white;")
-        self.canvas_nt.setFixedSize(400, 300)
+
+        self.canvas_nt = QLabel(self.centralwidget)
+        self.canvas_nt.setScaledContents(True)
+        self.canvas_nt.setStyleSheet("background-color: rgb(98, 154, 202);")
+        self.canvas_nt.setFixedSize(440, 350)
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.canvas_nt.setSizePolicy(size_policy)
         LowerLowerLayout.addWidget(self.canvas_nt)
         self.table = QTableWidget(self)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -1048,6 +1053,7 @@ class Ui_iPhaser(QMainWindow):
         convert_to_Qt_format = QtGui.QImage(cirve_frame.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
         # p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
         p = QPixmap.fromImage(convert_to_Qt_format)
+        p = p.scaled(3200, 2400)
         self.canvas_nt.setPixmap(p)
         self.canvas_nt.setContentsMargins(30, 5, 5, 30)
 
