@@ -62,12 +62,13 @@ COMBOBOX = """
         """
 
 
-def add_text(fc, results, fps, frame):
+def add_text(fc, results, fps, nt_index, frame):
     w, h, c = frame.shape
-    cv2.putText(frame, "   Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (22, 40), cv2.FONT_HERSHEY_SIMPLEX,
+    cv2.putText(frame, "    Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (22, 40), cv2.FONT_HERSHEY_SIMPLEX,
                 1.5, (210, 194, 0), 4)
-    cv2.putText(frame, "  Phase: {:<15s}".format(results), (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
-    cv2.putText(frame, " Trainee: {:<15s}".format(fps), (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "  Trainee: {:<15s}".format(fps), (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "   Phase: {:<15s}".format(results), (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "NT-index: {:<.4f}".format(nt_index), (20, 190), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
 
     # cv2.putText(frame, " Blood vessel".format(fps), (140, w - 40),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
     # cv2.putText(frame, " Muscularis".format(fps), (140, w - 80),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
@@ -123,12 +124,13 @@ class PlotCurveThread(QThread):
                 fig = Figure(figsize=(350/80, 300/80), dpi=80)
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
-                ax.plot(list(range(cur_data.shape[0])), cur_data, linewidth=2.5)
+                ax.plot(list(range(cur_data.shape[0])), cur_data, linewidth=4)
                 ax.set_xlabel("Time / Second")
                 ax.set_ylabel("Normalized Transition Index")
                 ax.grid(True, axis='y')
+                ax.set_facecolor('lightgray')
                 ax.set_xlim(0, cur_data.shape[0] * 5 / 4)
-                ax.set_ylim(0, np.max(cur_data) * 5 / 4)
+                ax.set_ylim(0, max(np.max(cur_data) * 5 / 4, 0.1))
                 ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
                 # Render the figure to a RGB array
@@ -928,7 +930,7 @@ class Ui_iPhaser(QMainWindow):
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
-        self.camera = cv2.VideoCapture("dataset/Case_D.MP4")
+        self.camera = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         self.process_frames = False
@@ -1025,12 +1027,12 @@ class Ui_iPhaser(QMainWindow):
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             if self.manual_frame > 0:
                 self.pred = self.manual_set
-            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), self.nt_indexes[-1], rgb_image)
         if self.WORKING:
             # print('write', rgb_image.shape)
             self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             rbg_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), rgb_image)
+            rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), self.nt_indexes[-1], rgb_image)
             # self.output_video.write(rbg_image)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
@@ -1734,7 +1736,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture("dataset/Case_D.MP4")
+        capture = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
