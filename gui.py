@@ -29,6 +29,8 @@ from utils.gui_parts import *
 from utils.report_tools import generate_report
 from canvas import Canvas
 
+now = datetime.datetime.now()
+
 warnings.filterwarnings("ignore")
 DEFAULT_STYLE = """
                 QProgressBar{
@@ -89,7 +91,7 @@ class ImageProcessingThread(QThread):
         self.end_y = end_y
         self.frames_to_process = []
         self.phaseseg = PhaseCom(arg=cfg)
-        self.processing_interval = 2  # Control the
+        self.processing_interval = 3  # Control the
 
     def run(self):
         while True:
@@ -109,29 +111,52 @@ class ImageProcessingThread(QThread):
     def add_frame(self, frame):
         self.frames_to_process.append(frame)
 
+class VideoReadThread(QThread):
+    frame_data = pyqtSignal(np.ndarray)
+
+    def __init__(self):
+        super().__init__()
+        self._is_running = False
+
+    def run(self):
+        self._is_running = True
+        camera = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
+        camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+        while self._is_running:
+            ret, frame = camera.read()
+            if ret:
+                self.frame_data.emit(frame)
+        camera.release()
+
 class PlotCurveThread(QThread):
     ploted_curve_array = pyqtSignal(np.ndarray)
 
     def __init__(self):
         super().__init__()
-        self.processing_interval = 2
+        self.processing_interval = 10
         self.data_to_plot = []
 
     def run(self):
+        prev_time = int(time.time())
         while True:
-            if len(self.data_to_plot) >= self.processing_interval:
-                cur_data = self.data_to_plot[-1]
+            cur_time = int(time.time())
+            if cur_time > prev_time and len(self.data_to_plot) > 0:
+                prev_time = cur_time
+                cur_data = self.data_to_plot[-1][0]
+                time_len = self.data_to_plot[-1][1] + 2
                 self.data_to_plot = []
-                fig = Figure(figsize=(450/80, 350/80), dpi=300)
+                fig = Figure(figsize=(4.5, 3.5), dpi=80)
                 fig.patch.set_facecolor('lightgray')
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
-                ax.plot(list(range(cur_data.shape[0])), cur_data, linewidth=4)
+                ax.plot(np.linspace(1, time_len, cur_data.shape[0]), cur_data, linewidth=4)
                 ax.set_xlabel("Time / Second")
                 ax.set_ylabel("Normalized Transition Index")
                 ax.grid(True, axis='y')
                 ax.set_facecolor('lightgray')
-                ax.set_xlim(0, cur_data.shape[0] * 5 / 4)
+                ax.set_xlim(1, time_len * 5 / 4 + 1)
                 ax.set_ylim(-0.02, max(np.max(cur_data) * 5 / 4, 0.1))
                 ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
@@ -139,6 +164,8 @@ class PlotCurveThread(QThread):
                 canvas.draw()
                 width, height = fig.get_size_inches() * fig.get_dpi()
                 image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
+
+                # TODO: Set frequency for plotting phases
                 self.ploted_curve_array.emit(image)
 
     def add_data(self, data):
@@ -163,6 +190,7 @@ class Ui_iPhaser(QMainWindow):
         self.point_size = 1
         self.mQImage = QPixmap('./images/test.jpg')
         self.cbFlag = 0
+        self.camera_frame = None
         self.size = QSize(curr_x - 25 - 500, curr_y - 65 - 250)
         self.old_pos = self.frameGeometry().getRect()
         self.save_folder = "../Records"
@@ -211,6 +239,7 @@ class Ui_iPhaser(QMainWindow):
         self.ru = 0
         self.aaa = 0
         self.bbb = 0
+        self.prev_second = 0
         self.index2phase = {0: "idle", 1: "marking", 2: "injection", 3: "dissection"}
         self.centralwidget = QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
@@ -506,7 +535,7 @@ class Ui_iPhaser(QMainWindow):
         header.setStyleSheet("background-color: darkgrey; color: black")
         header.setSectionResizeMode(QHeaderView.Stretch)
         header.setFixedHeight(50)
-        # TODO: update content
+
         self.table.setFixedSize(390, 300)
         self.table.setRowCount(5)
         self.table.setItem(0, 0, QTableWidgetItem("Marking"))
@@ -936,20 +965,20 @@ class Ui_iPhaser(QMainWindow):
         self.setCentralWidget(self.centralwidget)
         self.retranslateUi()
 
-        self.camera = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         self.process_frames = False
-
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_image)
-        self.timer.start(30)
 
         # self.timer2 = QTimer(self)
         # self.timer2.timeout.connect(self.update_plot)
         # self.timer2.start(1000)  #
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_image)
+        self.timer.start(20)  # TODO: set FPS in reading video
 
+        self.camera_thread = VideoReadThread()
+        self.camera_thread.frame_data.connect(self.update_camera_frame)
+        self.camera_thread.moveToThread(QCoreApplication.instance().thread())
+        self.camera_thread.start()
 
         self.canvas_draw_thread = None
         self.processing_thread = ImageProcessingThread(start_x=self.start_x,
@@ -1000,13 +1029,13 @@ class Ui_iPhaser(QMainWindow):
         """Convert from an opencv image to QPixmap"""
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
-        ret, frame = self.camera.read()
+        frame = self.camera_frame
         # time.sleep(0.05)
-        if ret:
+        if frame is not None:
             frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
                 self.processing_thread.add_frame(frame)
-                self.plot_thread.add_data(np.array(self.nt_indexes))
+                self.plot_thread.add_data([np.array(self.nt_indexes), int(time.time()) - self.start_second])
                 self.display_frame(frame)
                 if self.curve_array is not None:
                     self.display_curve(self.curve_array)
@@ -1021,7 +1050,6 @@ class Ui_iPhaser(QMainWindow):
 
             else:
                 self.display_frame(frame)
-
 
     def display_frame(self, frame):
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -1058,6 +1086,10 @@ class Ui_iPhaser(QMainWindow):
         self.canvas_nt.setPixmap(p)
         self.canvas_nt.setContentsMargins(30, 5, 5, 30)
 
+
+    def update_camera_frame(self, camera_frame):
+        self.camera_frame = camera_frame
+
     def update_pred(self, pred):
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
@@ -1079,15 +1111,21 @@ class Ui_iPhaser(QMainWindow):
         self.phase3_state.setChecked(states[2])
         self.phase4_state.setChecked(states[3])
 
-        if len(self.log_data) > 1:
+        if self.prev_second == 0:
+            self.prev_second = int(time.time())
+        self.cur_sceond = int(time.time())
+        if len(self.log_data) > 1 and (self.cur_sceond > self.prev_second):
+            multi_el = self.cur_sceond - self.prev_second
+            print(self.cur_sceond)
+            self.prev_second = self.cur_sceond
             prev_pred = self.log_data[-2][-5]
             cur_pred = self.log_data[-1][-5]
-            self.pred_phases.append(cur_pred)
+            self.pred_phases += [cur_pred] * multi_el
             self.preds.append(self.pred)
             if prev_pred != cur_pred:
-                self.transitions.append(self.transitions[-1] + 1)
+                self.transitions += [self.transitions[-1] + 1] * multi_el
             else:
-                self.transitions.append(self.transitions[-1])
+                self.transitions += [self.transitions[-1]] * multi_el
         else:
             self.transitions.append(0)
         self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))
@@ -1099,10 +1137,11 @@ class Ui_iPhaser(QMainWindow):
 
 
     def update_table(self):
-        # TODO: update table here
         if self.WORKING and len(self.pred_phases) > 0:
-            num = QTableWidgetItem(str(self.pred_phases.count("marking")))
-            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("marking") / len(self.pred_phases)))
+            total_seconds = int(time.time()) - self.start_second
+            phase_ratio = self.pred_phases.count("marking") / len(self.pred_phases)
+            num_ratio = QTableWidgetItem("{:>.2%}".format(phase_ratio))
+            num = QTableWidgetItem("{} s".format(int(phase_ratio * total_seconds)))
             num.setFont(QFont("", 16))
             num_ratio.setFont(QFont("", 16))
             num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -1110,8 +1149,9 @@ class Ui_iPhaser(QMainWindow):
             self.table.setItem(0, 1, num)
             self.table.setItem(0, 2, num_ratio)
 
-            num = QTableWidgetItem(str(self.pred_phases.count("injection")))
-            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("injection") / len(self.pred_phases)))
+            phase_ratio = self.pred_phases.count("injection") / len(self.pred_phases)
+            num_ratio = QTableWidgetItem("{:>.2%}".format(phase_ratio))
+            num = QTableWidgetItem("{} s".format(int(phase_ratio * total_seconds)))
             num.setFont(QFont("", 16))
             num_ratio.setFont(QFont("", 16))
             num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -1119,8 +1159,9 @@ class Ui_iPhaser(QMainWindow):
             self.table.setItem(1, 1, num)
             self.table.setItem(1, 2, num_ratio)
 
-            num = QTableWidgetItem(str(self.pred_phases.count("dissection")))
-            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("dissection") / len(self.pred_phases)))
+            phase_ratio = self.pred_phases.count("dissection") / len(self.pred_phases)
+            num_ratio = QTableWidgetItem("{:>.2%}".format(phase_ratio))
+            num = QTableWidgetItem("{} s".format(int(phase_ratio * total_seconds)))
             num.setFont(QFont("", 16))
             num_ratio.setFont(QFont("", 16))
             num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -1128,8 +1169,9 @@ class Ui_iPhaser(QMainWindow):
             self.table.setItem(2, 1, num)
             self.table.setItem(2, 2, num_ratio)
 
-            num = QTableWidgetItem(str(self.pred_phases.count("idle")))
-            num_ratio = QTableWidgetItem("{:>.2%}".format(self.pred_phases.count("idle") / len(self.pred_phases)))
+            phase_ratio = self.pred_phases.count("idle") / len(self.pred_phases)
+            num_ratio = QTableWidgetItem("{:>.2%}".format(phase_ratio))
+            num = QTableWidgetItem("{} s".format(int(phase_ratio * total_seconds)))
             num.setFont(QFont("", 16))
             num_ratio.setFont(QFont("", 16))
             num.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -1137,7 +1179,7 @@ class Ui_iPhaser(QMainWindow):
             self.table.setItem(3, 1, num)
             self.table.setItem(3, 2, num_ratio)
 
-            num = QTableWidgetItem(str(len(self.pred_phases)))
+            num = QTableWidgetItem("{} s".format(int(total_seconds)))
             num_ratio = QTableWidgetItem("   /   ")
             num.setFont(QFont("", 16))
             num_ratio.setFont(QFont("", 16))
@@ -1163,6 +1205,7 @@ class Ui_iPhaser(QMainWindow):
         # self.output_video = cv2.VideoWriter(video_file_name, self.CODEC, self.stream_fps,
         #                                     (self.FRAME_WIDTH, self.FRAME_HEIGHT))
         self.start_time = datetime.datetime.now().strftime("%H:%M:%S")
+        self.start_second = int(time.time())
         self.log_file = os.path.join(self.save_folder, self.trainee.text() + "_" + self.start_time.replace(":",
                                                                                                            "-") + ".csv")
         self.startTime = datetime.datetime.now()
@@ -1743,7 +1786,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
+        capture = cv2.VideoCapture(0)
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
