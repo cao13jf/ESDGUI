@@ -34,7 +34,7 @@ from datetime import time
 # dissection 00:21:10-00:25:00
 
 clips = [
-    {"start_time": time(hour=0, minute=0, second=50), "end_time": time(hour=0, minute=3, second=54)},
+    {"start_time": time(hour=0, minute=2, second=30), "end_time": time(hour=0, minute=3, second=54)},
     {"start_time": time(hour=0, minute=10, second=50), "end_time": time(hour=0, minute=14, second=30)},
     {"start_time": time(hour=0, minute=19, second=15), "end_time": time(hour=0, minute=21, second=10)},
     {"start_time": time(hour=0, minute=21, second=10), "end_time": time(hour=0, minute=25, second=0)}
@@ -59,4 +59,4 @@ for clip in clips:
 final_clip = concatenate_videoclips(extracted_clips)
 
 output_path = "dataset/Case_D_extracted.MP4"  # Replace with your desired output path
-final_clip.write_videofile(output_path, )
+final_clip.write_videofile(output_path, codec=None)

@@ -89,7 +89,7 @@ class ImageProcessingThread(QThread):
         self.end_y = end_y
         self.frames_to_process = []
         self.phaseseg = PhaseCom(arg=cfg)
-        self.processing_interval = 2
+        self.processing_interval = 2  # Control the
 
     def run(self):
         while True:
@@ -123,6 +123,7 @@ class PlotCurveThread(QThread):
                 cur_data = self.data_to_plot[-1]
                 self.data_to_plot = []
                 fig = Figure(figsize=(450/80, 350/80), dpi=300)
+                fig.patch.set_facecolor('lightgray')
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
                 ax.plot(list(range(cur_data.shape[0])), cur_data, linewidth=4)
@@ -131,7 +132,7 @@ class PlotCurveThread(QThread):
                 ax.grid(True, axis='y')
                 ax.set_facecolor('lightgray')
                 ax.set_xlim(0, cur_data.shape[0] * 5 / 4)
-                ax.set_ylim(0, max(np.max(cur_data) * 5 / 4, 0.1))
+                ax.set_ylim(-0.02, max(np.max(cur_data) * 5 / 4, 0.1))
                 ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
                 # Render the figure to a RGB array
@@ -489,7 +490,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.canvas_nt = QLabel(self.centralwidget)
         self.canvas_nt.setScaledContents(True)
-        self.canvas_nt.setStyleSheet("background-color: rgb(98, 154, 202);")
+        self.canvas_nt.setStyleSheet("background-color: lightgray;")
         self.canvas_nt.setFixedSize(440, 350)
         size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.canvas_nt.setSizePolicy(size_policy)
