@@ -136,12 +136,19 @@ class ReportThread(QThread):
     def __init__(self, log_dir):
         super().__init__()
         self.log_dir = log_dir
+        self.update_report = False
 
     def run(self):
-        report_file = generate_report(self.log_dir)
-        report_path = os.path.dirname(report_file)
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_file))
-        self.out_file_path.emit(report_file)
+        while True:
+            if self.update_report:
+                report_file = generate_report(self.log_dir)
+                report_path = os.path.abspath(report_file)
+                QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_path))
+                self.update_report = False
+                self.out_file_path.emit(report_file)
+    def report_signal(self, generate_flag):
+        self.update_report = generate_flag
+        print("Geting report signal", generate_flag)
 
 class PlotCurveThread(QThread):
     ploted_curve_array = pyqtSignal(np.ndarray)
@@ -746,7 +753,7 @@ class Ui_iPhaser(QMainWindow):
         self.phase1_prob = QProgressBar()
         self.phase1_prob.setObjectName("IdleProgress")
         self.phase1_prob.setStyleSheet(DEFAULT_STYLE)
-        self.phase1_prob.setValue(10)
+        self.phase1_prob.setValue(7)
         self.phase1_prob.setTextVisible(False)
         e4 = QLabel('Marking')
         e4.setObjectName("Marking")
@@ -1006,6 +1013,11 @@ class Ui_iPhaser(QMainWindow):
         self.plot_thread.ploted_curve_array.connect(self.update_plot)
         self.plot_thread.moveToThread(QCoreApplication.instance().thread())
         self.plot_thread.start()
+
+        self.report_thread = ReportThread("../Records")
+        self.report_thread.out_file_path.connect(self.enableReport)
+        self.report_thread.moveToThread(QCoreApplication.instance().thread())
+        self.report_thread.start()
 
     def windowResized(self, event):
         # Get the current window size
@@ -1526,7 +1538,7 @@ class Ui_iPhaser(QMainWindow):
         e8.setStyleSheet("background-color: white;border-radius:5px;color:black")
         e8.setAlignment(Qt.AlignCenter)
         e8.setFont(QFont("Arial", 14))
-        e8.setText("Nov")
+        e8.setText("Dec")
         hlayout1.addWidget(e8)
         e9 = QFrame()
         e9.setFrameShape(QFrame.HLine)
@@ -1693,6 +1705,7 @@ class Ui_iPhaser(QMainWindow):
             self.duraSecond.setText('{:02d}'.format(second))
 
     def generateReport(self):
+
         self.reportButton.setEnabled(False)  # TODO: 同时将report按钮设置成灰色
         self.reportButton.setStyleSheet("QPushButton"
                                         "{"
@@ -1703,15 +1716,9 @@ class Ui_iPhaser(QMainWindow):
                                         "outline: 1px;"
                                         "min-width: 8em;"
                                         "}")
-        report_thread = ReportThread("../Records")
-        report_thread.out_file_path.connect(self.enableReport)
-        report_thread.moveToThread(QCoreApplication.instance().thread())
-        report_thread.start()
 
-        # report_file = generate_report("../Records")
-        # report_path = os.path.dirname(report_file)
-        # QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_file))
-        # self.enableReport(report_file)
+        self.report_thread.report_signal(generate_flag=True)
+
 
     def enableReport(self, report_file_path):
         self.reportButton.setEnabled(True)
@@ -1724,7 +1731,6 @@ class Ui_iPhaser(QMainWindow):
                                         "outline: 1px;"
                                         "min-width: 8em;"
                                         "}")
-
     def setupAnalytics(self):
         num_widget = self.verticalLayout.count()
         while num_widget > 0:
