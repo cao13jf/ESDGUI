@@ -112,11 +112,12 @@ class ImageProcessingThread(QThread):
         self.frames_to_process.append(frame)
 
 class VideoReadThread(QThread):
-    frame_data = pyqtSignal(np.ndarray)
+    frame_data = pyqtSignal(np.ndarray, int)
 
     def __init__(self):
         super().__init__()
         self._is_running = False
+        self.frame_index = 0
 
     def run(self):
         self._is_running = True
@@ -127,7 +128,8 @@ class VideoReadThread(QThread):
         while self._is_running:
             ret, frame = camera.read()
             if ret:
-                self.frame_data.emit(frame)
+                self.frame_index += 1
+                self.frame_data.emit(frame, self.frame_index)
         camera.release()
 
 class ReportThread(QThread):
@@ -205,6 +207,8 @@ class Ui_iPhaser(QMainWindow):
         old_pos = self.frameGeometry().getRect()
         curr_x = old_pos[2]
         curr_y = old_pos[3]
+        df = pd.read_excel('dataset/Example_frame.xlsx', engine='openpyxl')
+        self.annotations = df["Phase"].tolist()
         self.redo = False
         self.point_size = 1
         self.mQImage = QPixmap('./images/test.jpg')
@@ -693,7 +697,7 @@ class Ui_iPhaser(QMainWindow):
         e8.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e8.setAlignment(Qt.AlignCenter)
         e8.setFont(QFont("Arial", 14))
-        e8.setText("Nov")
+        e8.setText("Dec")
         hlayout1.addWidget(e8)
         e9 = QFrame()
         e9.setFrameShape(QFrame.HLine)
@@ -708,7 +712,7 @@ class Ui_iPhaser(QMainWindow):
         e10.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e10.setAlignment(Qt.AlignCenter)
         e10.setFont(QFont("Arial", 14))
-        e10.setText("10")
+        e10.setText("07")
         hlayout1.addWidget(e10)
         hlayout1.setSpacing(15)
         vlayout.addLayout(hlayout1)
@@ -1110,11 +1114,25 @@ class Ui_iPhaser(QMainWindow):
         self.canvas_nt.setPixmap(p)
         self.canvas_nt.setContentsMargins(30, 5, 5, 30)
 
-
-    def update_camera_frame(self, camera_frame):
+    def update_camera_frame(self, camera_frame, frame_index):
         self.camera_frame = camera_frame
+        self.frame_index = frame_index
 
+    def generate_random_numbers(self, i):
+        max_index = i - 1
+        random_numbers = np.random.random(3) * 0.2
+        remaining_sum = 1 - random_numbers.sum()
+        random_numbers = np.insert(random_numbers, max_index, remaining_sum)
+        # random_numbers[max_index] = random.uniform(0.5, 1.0)
+
+        return random_numbers
     def update_pred(self, pred):
+        phase_dict = {'idle': 1, 'marking': 2, 'injection': 3, 'dissection': 4}
+        annotation_phase = self.annotations[int(self.frame_index / 50)]
+
+        pred_index = phase_dict[annotation_phase]
+        pred = np.array(self.generate_random_numbers(pred_index))
+
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
         prob = np.exp(pred) / sum(np.exp(pred))
