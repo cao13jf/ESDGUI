@@ -77,7 +77,7 @@ def create_mask_file(mask, polygon, label):
     points = points.astype(int)
     # mask = cv2.drawContours(mask, [points], -1, color=(255, 255, 255), thickness=5)
     height, width = mask.shape
-    mask_array = np.zeros((height, width, 3), dtype=np.uint8)  # TODO: check hight and width
+    mask_array = np.zeros((height, width, 3), dtype=np.uint8)
     mask_array = cv2.fillPoly(mask_array, [points], color=(0, 0, 255))
     mask[mask_array[..., -1] != 0] = label
 
@@ -477,101 +477,102 @@ def equally_spaced_sampling(lst, num_samples):
     return samples
 
 def generate_report(log_dir):
-
+    # 1080 X 1559; 6000 X 8666
     if not os.path.isdir("./reports/components"):
         os.makedirs("./reports/components")
 
+    # TODO: Progress bar "Gathering data"
     log_files = glob(os.path.join(log_dir, "*.csv"))
     case_names = [os.path.basename(log_file).split("_")[0] for log_file in log_files]
     case_names = list(set(case_names))
-    for case_name in case_names:
-        log_files = glob(os.path.join(log_dir, "{}*.csv".format(case_name)))
-        phases, status, trainees, train_str, mentor_str, bed, date = get_meta(log_files)
+    case_name = case_names[-1]
+    log_files = glob(os.path.join(log_dir, "{}*.csv".format(case_name)))
+    phases, status, trainees, train_str, mentor_str, bed, date = get_meta(log_files)
 
-        phase_file = "./reports/components/{}_time_phase.png".format(case_name)
-        status_file = "./reports/components/{}_time_status.png".format(case_name)
-        trainee_file = "./reports/components/{}_time_trainee.png".format(case_name)
-        pie_file = "./reports/components/{}_phase_pie.png".format(case_name)
-        transition_file = "./reports/components/{}_transition.png".format(case_name)
+    phase_file = "./reports/components/{}_time_phase.png".format(case_name)
+    status_file = "./reports/components/{}_time_status.png".format(case_name)
+    trainee_file = "./reports/components/{}_time_trainee.png".format(case_name)
+    pie_file = "./reports/components/{}_phase_pie.png".format(case_name)
+    transition_file = "./reports/components/{}_transition.png".format(case_name)
 
-        # TODO: optimize image generation with equally-spaced samping
-        generate_phase_band(equally_spaced_sampling(phases, 1000), file_name=phase_file, colors="tab20c")
-        generate_phase_band(equally_spaced_sampling(status, 1000), file_name=status_file, colors="tab20b")
-        generate_phase_band(equally_spaced_sampling(trainees, 1000), file_name=trainee_file, colors="tab20c")
-        plot_pie(phases, pie_name=pie_file)
-        generate_transition(phases, transition_file)
+    # TODO: Progress bar "Analyzing data"
+    generate_phase_band(equally_spaced_sampling(phases, 1000), file_name=phase_file, colors="tab20c")
+    generate_phase_band(equally_spaced_sampling(status, 1000), file_name=status_file, colors="tab20b")
+    generate_phase_band(equally_spaced_sampling(trainees, 1000), file_name=trainee_file, colors="tab20c")
+    plot_pie(phases, pie_name=pie_file)
+    generate_transition(phases, transition_file)
 
 
-        # combine all infos
-        im = plt.imread("./configs/report_template.png")
-        sh, sw, d = im.shape
-        figure(figsize=(sw, sh), dpi=600)
-        fig, ax = plt.subplots()
-        ax = plt.gca()
-        ax.set_xlim(0, sw)
-        ax.set_ylim(0, sh)
-        plt.imshow(im, extent=[0, sw, 0, sh])
+    # combine all infos
+    im = plt.imread("./configs/report_template_resized.png")
+    sh, sw, d = im.shape
+    figure(figsize=(sw, sh), dpi=600)
+    fig, ax = plt.subplots()
+    ax = plt.gca()
+    ax.set_xlim(0, sw)
+    ax.set_ylim(0, sh)
+    plt.imshow(im, extent=[0, sw, 0, sh])
 
-        # add header
-        plt.text(790, 7945, train_str, fontsize=3)  # add text
-        plt.text(790, 7750, mentor_str, fontsize=3)  # add text
-        plt.text(4660, 7945, bed, fontsize=3)  # add text
-        plt.text(4660, 7750, date, fontsize=3)  # add text
+    # add header
+    plt.text(142.2, 1430.1, train_str, fontsize=3)  # add text
+    plt.text(142.2, 1395.0, mentor_str, fontsize=3)  # add text
+    plt.text(838.8, 1430.1, bed, fontsize=3)  # add text
+    plt.text(838.8, 1395.0, date, fontsize=3)  # add text
 
-        # Add basic information
-        phase = Image.open(phase_file)
-        plt.imshow(phase, extent=[281, 5718, 7206, 7430])
+    # Add basic information
+    phase = Image.open(phase_file)
+    plt.imshow(phase, extent=[50.58, 1029.24, 1297.08, 1337.4])
 
-        status = Image.open(status_file)
-        plt.imshow(status, extent=[281, 5718, 6667, 6889])
+    status = Image.open(status_file)
+    plt.imshow(status, extent=[50.58, 1029.24, 1200.06, 1240.02])
 
-        trainee = Image.open(trainee_file)
-        plt.imshow(trainee, extent=[281, 5718, 6090, 6352])
+    trainee = Image.open(trainee_file)
+    plt.imshow(trainee, extent=[50.58, 1029.24, 1096.2, 1143.36])
 
-        # Add durations
-        counts = get_durations(phases)
-        locations = [[1416, 5291], [1416, 5046], [1416, 4806], [1416, 4566], [1416, 4320]]
-        for idx, count in enumerate(counts):
-            location = locations[idx]
-            plt.text(location[0], location[1], "{:>8d}".format(count), fontsize=4)  # add text
+    # Add durations
+    counts = get_durations(phases)
+    locations = [[254.88, 952.38], [254.88, 908.28], [254.88, 865.08], [254.88, 822.48], [254.88, 777.6]]
+    for idx, count in enumerate(counts):
+        location = locations[idx]
+        plt.text(location[0], location[1], "{:>8d}".format(count), fontsize=4)  # add text
 
-        # add proportion
-        locations = [[2520, 5281], [2520, 5046], [2520, 4806], [2520, 4566]]
-        total = counts[-1]
-        for idx, count in enumerate(counts[:-1]):
-            location = locations[idx]
-            plt.text(location[0], location[1], "{:>2.2f}".format(count / total), fontsize=4)  # add text
+    # add proportion
+    locations = [[453.6, 950.58], [453.6, 908.28], [453.6, 865.08], [453.6, 822.48]]
+    total = counts[-1]
+    for idx, count in enumerate(counts[:-1]):
+        location = locations[idx]
+        plt.text(location[0], location[1], "{:>2.2f}".format(count / total), fontsize=4)  # add text
 
-        # add pie file
-        pie_duration = Image.open(pie_file)
-        plt.imshow(pie_duration, extent=[3570, 4740, 4328, 5498])
+    # add pie file
+    pie_duration = Image.open(pie_file)
+    plt.imshow(pie_duration, extent=[642.6, 853.2, 779.04, 989.64])
 
-        # add transition
-        transition = Image.open(transition_file)
-        plt.imshow(transition, extent=[3850, 5607, 1760, 3306])
+    # add transition
+    transition = Image.open(transition_file)
+    plt.imshow(transition, extent=[693, 1009.26, 316.8, 594.48])
 
-        # Add scores
-        score_A = phases.count(3) / max(phases.count(4), 1) #  TODO: Change score A
-        plt.text(2660, 2877, "{:2.2f}".format(score_A), fontsize=4)  # add text
-        if score_A > 0.06:  #
-            score_A = "A"
-        else:
-            score_A = "A"
-        plt.text(2460, 550, "{}".format(score_A), fontsize=4)  # add text
-        # score_B = get_score_B()
+    # Add scores
+    score_A = phases.count(3) / max(phases.count(4), 1)
+    plt.text(478.8, 519.06, "{:2.2f}".format(score_A), fontsize=4)  # add text
+    if score_A > 0.06:  #
+        score_A = "A"
+    else:
+        score_A = "A"
+    plt.text(442.8, 99, "{}".format(score_A), fontsize=4)  # add text
 
-        score_B = (get_score_B(phases) * 10 ** 6 - 60)*100  # TODO: Change score B
-        plt.text(2979, 1820, "{:2.0f}".format(abs(score_B)), fontsize=4)  # add text
-        if score_B > 89:  #
-            score_B = "A"
-        else:
-            score_B = "A"
-        plt.text(4400, 550, "{}".format(score_B), fontsize=4)  # add text
+    score_B = (get_score_B(phases) * 10 ** 6 - 60) * 100  #
+    plt.text(535.02, 327.6, "{:2.0f}".format(abs(score_B)), fontsize=4)  # add text
+    if score_B > 89:  #
+        score_B = "A"
+    else:
+        score_B = "A"
+    plt.text(792, 99, "{}".format(score_B), fontsize=4)  # add text
 
-        plt.axis("off")
-        # plt.show()
-        save_file = "./reports/{}_report.png".format(case_name)
-        plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
-        plt.clf()
-        plt.close()
-        return save_file
+    plt.axis("off")
+    # plt.show()
+    # TODO: Progress bar "Generating final report"
+    save_file = "./reports/{}_report.png".format(case_name)
+    plt.savefig(save_file, bbox_inches='tight', dpi=250, pad_inches=0.0)
+    plt.clf()
+    plt.close()
+    return save_file

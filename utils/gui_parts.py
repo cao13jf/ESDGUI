@@ -14,7 +14,7 @@ class VideoThread(QThread):
     def run(self):
         frame_idx = 0
         # capture from web cam
-        cap = cv2.VideoCapture(0)  # TODO: Camera input
+        cap = cv2.VideoCapture(0)
         #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 
         #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
@@ -24,7 +24,7 @@ class VideoThread(QThread):
                 frame_idx += 1
                 ret, cv_img = cap.read()
                 #print(ret)
-                time.sleep(0.15)  # TODO: removing sleep for camera
+                time.sleep(0.15)
                 if ret:
                     #print(cv_img)
                     

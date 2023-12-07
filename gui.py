@@ -140,7 +140,8 @@ class ReportThread(QThread):
     def run(self):
         report_file = generate_report(self.log_dir)
         report_path = os.path.dirname(report_file)
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_path))  # TODO: open the image instead of file as a saparated window
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_file))
+        self.out_file_path.emit(report_file)
 
 class PlotCurveThread(QThread):
     ploted_curve_array = pyqtSignal(np.ndarray)
@@ -624,7 +625,7 @@ class Ui_iPhaser(QMainWindow):
         self.verticalLayout3.addWidget(gapWidget, 5)
 
         vlayout = QVBoxLayout(widget1)
-        vlayout.setObjectName("CaseInformationVlayout")
+        vlayout.setObjectName("CaseInformationVlayout")  # TODO: 将这一部分的日期修改为当前的日期，目前是人工设置为默认的，有错误。
         self.e1 = QLabel('Patient ID:')
         self.e1.setObjectName("PID")
         self.e1.setFont(QFont("Arial", 16, QFont.Bold))
@@ -984,7 +985,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
-        self.timer.start(50)  # TODO: set FPS in reading video
+        self.timer.start(20)
 
         self.camera_thread = VideoReadThread()
         self.camera_thread.frame_data.connect(self.update_camera_frame)
@@ -1692,12 +1693,37 @@ class Ui_iPhaser(QMainWindow):
             self.duraSecond.setText('{:02d}'.format(second))
 
     def generateReport(self):
-        self.reportButton.setEnabled(False)
+        self.reportButton.setEnabled(False)  # TODO: 同时将report按钮设置成灰色
+        self.reportButton.setStyleSheet("QPushButton"
+                                        "{"
+                                        "background-color: lightgrey;"
+                                        "color: white;"
+                                        "padding: 5px 15px;"
+                                        "margin-top: 10px;"
+                                        "outline: 1px;"
+                                        "min-width: 8em;"
+                                        "}")
         report_thread = ReportThread("../Records")
+        report_thread.out_file_path.connect(self.enableReport)
         report_thread.moveToThread(QCoreApplication.instance().thread())
         report_thread.start()
-        time.sleep(5)
+
+        # report_file = generate_report("../Records")
+        # report_path = os.path.dirname(report_file)
+        # QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_file))
+        # self.enableReport(report_file)
+
+    def enableReport(self, report_file_path):
         self.reportButton.setEnabled(True)
+        self.reportButton.setStyleSheet("QPushButton"
+                                        "{"
+                                        "background-color: green;"
+                                        "color: white;"
+                                        "padding: 5px 15px;"
+                                        "margin-top: 10px;"
+                                        "outline: 1px;"
+                                        "min-width: 8em;"
+                                        "}")
 
     def setupAnalytics(self):
         num_widget = self.verticalLayout.count()
