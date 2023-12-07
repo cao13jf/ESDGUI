@@ -71,7 +71,7 @@ def add_text(fc, results, fps, nt_index, frame):
                 1.5, (210, 194, 0), 4)
     cv2.putText(frame, "  Trainee: {:<15s}".format(fps), (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
     cv2.putText(frame, "   Phase: {:<15s}".format(results), (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
-    cv2.putText(frame, "NT-index: {:<.4f}".format(nt_index), (20, 190), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "NT-index: {:<.3f}".format(nt_index), (20, 190), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
 
     # cv2.putText(frame, " Blood vessel".format(fps), (140, w - 40),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
     # cv2.putText(frame, " Muscularis".format(fps), (140, w - 80),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
@@ -130,6 +130,18 @@ class VideoReadThread(QThread):
                 self.frame_data.emit(frame)
         camera.release()
 
+class ReportThread(QThread):
+    out_file_path = pyqtSignal(str)
+
+    def __init__(self, log_dir):
+        super().__init__()
+        self.log_dir = log_dir
+
+    def run(self):
+        report_file = generate_report(self.log_dir)
+        report_path = os.path.dirname(report_file)
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_path))  # TODO: open the image instead of file as a saparated window
+
 class PlotCurveThread(QThread):
     ploted_curve_array = pyqtSignal(np.ndarray)
 
@@ -147,16 +159,16 @@ class PlotCurveThread(QThread):
                 cur_data = self.data_to_plot[-1][0]
                 time_len = self.data_to_plot[-1][1] + 2
                 self.data_to_plot = []
-                fig = Figure(figsize=(4.5, 3.5), dpi=80)
+                fig = Figure(figsize=(3.2, 3.5), dpi=80)
                 fig.patch.set_facecolor('lightgray')
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
-                ax.plot(np.linspace(1, time_len, cur_data.shape[0]), cur_data, linewidth=4)
-                ax.set_xlabel("Time / Second")
+                ax.plot(np.linspace(1, time_len, cur_data.shape[0]) / 60, cur_data, linewidth=2)
+                ax.set_xlabel("Time / Minute")
                 ax.set_ylabel("Normalized Transition Index")
                 ax.grid(True, axis='y')
                 ax.set_facecolor('lightgray')
-                ax.set_xlim(1, time_len * 5 / 4 + 1)
+                ax.set_xlim(0, 10)
                 ax.set_ylim(-0.02, max(np.max(cur_data) * 5 / 4, 0.1))
                 ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
@@ -165,7 +177,6 @@ class PlotCurveThread(QThread):
                 width, height = fig.get_size_inches() * fig.get_dpi()
                 image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
 
-                # TODO: Set frequency for plotting phases
                 self.ploted_curve_array.emit(image)
 
     def add_data(self, data):
@@ -973,7 +984,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
-        self.timer.start(20)  # TODO: set FPS in reading video
+        self.timer.start(50)  # TODO: set FPS in reading video
 
         self.camera_thread = VideoReadThread()
         self.camera_thread.frame_data.connect(self.update_camera_frame)
@@ -1116,7 +1127,6 @@ class Ui_iPhaser(QMainWindow):
         self.cur_sceond = int(time.time())
         if len(self.log_data) > 1 and (self.cur_sceond > self.prev_second):
             multi_el = self.cur_sceond - self.prev_second
-            print(self.cur_sceond)
             self.prev_second = self.cur_sceond
             prev_pred = self.log_data[-2][-5]
             cur_pred = self.log_data[-1][-5]
@@ -1128,7 +1138,7 @@ class Ui_iPhaser(QMainWindow):
                 self.transitions += [self.transitions[-1]] * multi_el
         else:
             self.transitions.append(0)
-        self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions))
+        self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions) * 10)
 
 
     def update_plot(self, plotted_cuvre_array):
@@ -1683,9 +1693,10 @@ class Ui_iPhaser(QMainWindow):
 
     def generateReport(self):
         self.reportButton.setEnabled(False)
-        report_path = generate_report("../Records")
-        fullpath = os.path.realpath("./reports")
-        QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(fullpath))
+        report_thread = ReportThread("../Records")
+        report_thread.moveToThread(QCoreApplication.instance().thread())
+        report_thread.start()
+        time.sleep(5)
         self.reportButton.setEnabled(True)
 
     def setupAnalytics(self):

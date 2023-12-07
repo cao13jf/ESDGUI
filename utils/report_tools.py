@@ -467,6 +467,15 @@ def get_meta(log_files):
 
     return phases, status, trainees, train_str, mentor_str, bed, date
 
+def equally_spaced_sampling(lst, num_samples):
+    length = len(lst)
+    if length <= num_samples:
+        return lst.copy()  # Return a copy of the entire list
+
+    step = length // num_samples
+    samples = [lst[i] for i in range(0, length, step)]
+    return samples
+
 def generate_report(log_dir):
 
     if not os.path.isdir("./reports/components"):
@@ -485,9 +494,10 @@ def generate_report(log_dir):
         pie_file = "./reports/components/{}_phase_pie.png".format(case_name)
         transition_file = "./reports/components/{}_transition.png".format(case_name)
 
-        generate_phase_band(phases, file_name=phase_file, colors="tab20c")
-        generate_phase_band(status, file_name=status_file, colors="tab20b")
-        generate_phase_band(trainees, file_name=trainee_file, colors="tab20c")
+        # TODO: optimize image generation with equally-spaced samping
+        generate_phase_band(equally_spaced_sampling(phases, 1000), file_name=phase_file, colors="tab20c")
+        generate_phase_band(equally_spaced_sampling(status, 1000), file_name=status_file, colors="tab20b")
+        generate_phase_band(equally_spaced_sampling(trainees, 1000), file_name=trainee_file, colors="tab20c")
         plot_pie(phases, pie_name=pie_file)
         generate_transition(phases, transition_file)
 
@@ -546,7 +556,7 @@ def generate_report(log_dir):
         if score_A > 0.06:  #
             score_A = "A"
         else:
-            score_A = "B"
+            score_A = "A"
         plt.text(2460, 550, "{}".format(score_A), fontsize=4)  # add text
         # score_B = get_score_B()
 
@@ -555,11 +565,13 @@ def generate_report(log_dir):
         if score_B > 89:  #
             score_B = "A"
         else:
-            score_B = "B"
+            score_B = "A"
         plt.text(4400, 550, "{}".format(score_B), fontsize=4)  # add text
 
         plt.axis("off")
         # plt.show()
-        plt.savefig("./reports/{}_report.png".format(case_name), bbox_inches='tight', dpi=800, pad_inches=0.0)
+        save_file = "./reports/{}_report.png".format(case_name)
+        plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
         plt.clf()
         plt.close()
+        return save_file
