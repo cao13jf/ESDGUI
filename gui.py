@@ -132,6 +132,7 @@ class VideoReadThread(QThread):
                 self.frame_data.emit(frame, self.frame_index)
         camera.release()
 
+# TODO：我把生成报告的代码移到了单独的thread，但是目前还是很慢，理论上而言应该只需要很短的时间(见tem.py)。检查以下这里的原因。
 class ReportThread(QThread):
     out_file_path = pyqtSignal(str)
 
@@ -1724,7 +1725,7 @@ class Ui_iPhaser(QMainWindow):
 
     def generateReport(self):
 
-        self.reportButton.setEnabled(False)  # TODO: 同时将report按钮设置成灰色
+        self.reportButton.setEnabled(False)
         self.reportButton.setStyleSheet("QPushButton"
                                         "{"
                                         "background-color: lightgrey;"

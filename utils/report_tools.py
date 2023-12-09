@@ -484,7 +484,9 @@ def generate_report(log_dir):
     log_files = glob(os.path.join(log_dir, "*.csv"))
     case_names = [os.path.basename(log_file).split("_")[0] for log_file in log_files]
     case_names = list(set(case_names))
+    # TODO： 增加一个弹出的progress bar，分为下面三个阶段
     for case_name in case_names:
+        # todo: Progress bar 1/4: "Collecting information"
         log_files = glob(os.path.join(log_dir, "{}*.csv".format(case_name)))
         phases, status, trainees, train_str, mentor_str, bed, date = get_meta(log_files)
 
@@ -494,6 +496,7 @@ def generate_report(log_dir):
         pie_file = "./reports/components/{}_phase_pie.png".format(case_name)
         transition_file = "./reports/components/{}_transition.png".format(case_name)
 
+        # todo: Progress bar 2/4: "Analyzing"
         generate_phase_band(equally_spaced_sampling(phases, 1000), file_name=phase_file, colors="tab20c")
         generate_phase_band(equally_spaced_sampling(status, 1000), file_name=status_file, colors="tab20b")
         generate_phase_band(equally_spaced_sampling(trainees, 1000), file_name=trainee_file, colors="tab20c")
@@ -502,6 +505,7 @@ def generate_report(log_dir):
 
 
         # combine all infos
+        # todo: Progress bar 3/4: "Generating report"
         im = plt.imread("./configs/report_template_resized.png")
         sh, sw, d = im.shape
         figure(figsize=(sw, sh), dpi=600)
@@ -568,8 +572,10 @@ def generate_report(log_dir):
 
         plt.axis("off")
         # plt.show()
+        # todo: Progress bar 4/4: "Finished"
         save_file = "./reports/{}_report.png".format(case_name)
         plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
         plt.clf()
         plt.close()
+        # todo: Close the progress bar
         return save_file
