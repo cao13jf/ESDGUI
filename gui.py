@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from threading import Thread
-import datetime
+import calendar
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
@@ -16,6 +16,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 import torch
 import random
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 
@@ -29,7 +30,7 @@ from utils.gui_parts import *
 from utils.report_tools import generate_report
 from canvas import Canvas
 
-now = datetime.datetime.now()
+now = datetime.now()
 
 warnings.filterwarnings("ignore")
 DEFAULT_STYLE = """
@@ -637,7 +638,26 @@ class Ui_iPhaser(QMainWindow):
         self.verticalLayout3.addWidget(gapWidget, 5)
 
         vlayout = QVBoxLayout(widget1)
-        vlayout.setObjectName("CaseInformationVlayout")  # TODO: 将这一部分的日期修改为当前的日期，目前是人工设置为默认的，有错误。
+        vlayout.setObjectName("CaseInformationVlayout")
+        current_datetime = datetime.now()
+        year = current_datetime.year
+        month = current_datetime.month
+        month_names = {
+            1: "Jan",
+            2: "Feb",
+            3: "Mar",
+            4: "Apr",
+            5: "May",
+            6: "Jun",
+            7: "Jul",
+            8: "Aug",
+            9: "Sep",
+            10: "Oct",
+            11: "Nov",
+            12: "Dec"
+        }
+        month_name = month_names[month]
+        day = current_datetime.day
         self.e1 = QLabel('Patient ID:')
         self.e1.setObjectName("PID")
         self.e1.setFont(QFont("Arial", 16, QFont.Bold))
@@ -683,7 +703,7 @@ class Ui_iPhaser(QMainWindow):
         e6.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e6.setAlignment(Qt.AlignCenter)
         e6.setFont(QFont("Arial", 14))
-        e6.setText("2023")
+        e6.setText(str(year))
         hlayout1.addWidget(e6)
         e7 = QFrame()
         e7.setFrameShape(QFrame.HLine)
@@ -698,7 +718,7 @@ class Ui_iPhaser(QMainWindow):
         e8.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e8.setAlignment(Qt.AlignCenter)
         e8.setFont(QFont("Arial", 14))
-        e8.setText("Dec")
+        e8.setText(month_name)
         hlayout1.addWidget(e8)
         e9 = QFrame()
         e9.setFrameShape(QFrame.HLine)
@@ -713,7 +733,7 @@ class Ui_iPhaser(QMainWindow):
         e10.setStyleSheet("background-color: #336699;border-radius:5px;color: white")
         e10.setAlignment(Qt.AlignCenter)
         e10.setFont(QFont("Arial", 14))
-        e10.setText("07")
+        e10.setText(str(day))
         hlayout1.addWidget(e10)
         hlayout1.setSpacing(15)
         vlayout.addLayout(hlayout1)
@@ -982,7 +1002,6 @@ class Ui_iPhaser(QMainWindow):
         # Adjust the position and size of the image label when the main window is resized
         self.centralwidget.resizeEvent = self.windowResized
 
-        # self.setupCaseInformation()
         self.setupTrainer()
         # self.setupPhaseRecog()
         # self.setupAnalytics()
@@ -1071,7 +1090,7 @@ class Ui_iPhaser(QMainWindow):
                 self.update_table()
 
         # update the online analytics box
-                self.current_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+                self.current_time = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
                 self.rect1.setText(self.current_time)
                 self.rect2.setText(self.mentor.text())
                 self.rect3.setText(self.trainee.text())
@@ -1087,13 +1106,13 @@ class Ui_iPhaser(QMainWindow):
             self.manual_frame = 0
             self.manual_set = "--"
         if self.INIT:
-            self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+            self.date_time = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             if self.manual_frame > 0:
                 self.pred = self.manual_set
             rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), self.nt_indexes[-1], rgb_image)
         if self.WORKING:
             # print('write', rgb_image.shape)
-            self.date_time = datetime.datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
+            self.date_time = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
             rbg_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
             rgb_image = add_text(self.date_time, self.pred, self.trainee.text(), self.nt_indexes[-1], rgb_image)
             # self.output_video.write(rbg_image)
@@ -1139,7 +1158,7 @@ class Ui_iPhaser(QMainWindow):
         prob = np.exp(pred) / sum(np.exp(pred))
         self.pred = self.index2phase[pred_index]
         self.a2.setText(self.pred)
-        add_log = [datetime.datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
+        add_log = [datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
         add_log += prob.tolist()
         self.log_data.append(add_log)
         pred_percentages = ((np.exp(pred) / np.exp(pred).sum()) * 100).tolist()
@@ -1246,11 +1265,11 @@ class Ui_iPhaser(QMainWindow):
         #     ":", "-") + ".avi")
         # self.output_video = cv2.VideoWriter(video_file_name, self.CODEC, self.stream_fps,
         #                                     (self.FRAME_WIDTH, self.FRAME_HEIGHT))
-        self.start_time = datetime.datetime.now().strftime("%H:%M:%S")
+        self.start_time = datetime.now().strftime("%H:%M:%S")
         self.start_second = int(time.time())
         self.log_file = os.path.join(self.save_folder, self.trainee.text() + "_" + self.start_time.replace(":",
                                                                                                            "-") + ".csv")
-        self.startTime = datetime.datetime.now()
+        self.startTime = datetime.now()
         lineEdits = self.trainLabel.findChildren(QLineEdit)
         for lineEdit in lineEdits:
             if lineEdit.objectName() == 'TraineeInput':
@@ -1488,233 +1507,12 @@ class Ui_iPhaser(QMainWindow):
                 self.elayout.addWidget(e1_group, count - 1, 0)
                 self.elayout.setAlignment(Qt.AlignLeft)
 
-    def setupCaseInformation(self):
-        num_widget = self.verticalLayout.count()
-        while num_widget > 0:
-            widget = self.verticalLayout.itemAt(num_widget - 1).widget()
-            if widget.objectName() == 'CaseInformation':
-                break
-            num_widget -= 1
-        vlayout = QVBoxLayout(widget)
-        vlayout.setObjectName("CaseInformationVlayout")
-        self.e1 = QLabel('Patient ID:')
-        self.e1.setObjectName("PID")
-        self.e1.setFont(QFont("Arial", 16, QFont.Bold))
-        self.e1.setStyleSheet("color:white;")
-        vlayout.addWidget(self.e1)
-        hlayout = QHBoxLayout()
-        e2 = QLineEdit()
-        e2.setFixedHeight(35)
-        e2.setFixedWidth(180)
-        e2.setObjectName("PID1")
-        e2.setStyleSheet("background: white;border-radius:5px;color: black")
-        e2.setAlignment(Qt.AlignCenter)
-        e2.setFont(QFont("Arial", 14))
-        e2.setText("Jenny")
-        hlayout.addWidget(e2)
-        e3 = QFrame()
-        e3.setFrameShape(QFrame.HLine)
-        e3.setFrameShadow(QFrame.Plain)
-        e3.setLineWidth(2)
-        e3.setObjectName("PIDSpace")
-        hlayout.addWidget(e3)
-        e4 = QLineEdit()
-        e4.setFixedHeight(35)
-        e4.setFixedWidth(180)
-        e4.setObjectName("PID2")
-        e4.setStyleSheet("background: white;border-radius:5px;color:black")
-        e4.setAlignment(Qt.AlignCenter)
-        e4.setFont(QFont("Arial", 14))
-        e4.setText("798xxx(x)")
-        hlayout.addWidget(e4)
-        hlayout.setSpacing(15)
-        vlayout.addLayout(hlayout)
-        e5 = QLabel('Date:')
-        e5.setObjectName("PIDDate")
-        e5.setFont(QFont("Arial", 16, QFont.Bold))
-        e5.setStyleSheet("color:white;")
-        vlayout.addWidget(e5)
-        hlayout1 = QHBoxLayout()
-        e6 = QLineEdit()
-        e6.setFixedHeight(35)
-        e6.setFixedWidth(105)
-        e6.setObjectName("PIDDateYear")
-        e6.setStyleSheet("background-color: white;border-radius:5px;color:black")
-        e6.setAlignment(Qt.AlignCenter)
-        e6.setFont(QFont("Arial", 14))
-        e6.setText("2023")
-        hlayout1.addWidget(e6)
-        e7 = QFrame()
-        e7.setFrameShape(QFrame.HLine)
-        e7.setFrameShadow(QFrame.Plain)
-        e7.setLineWidth(2)
-        e7.setObjectName("PIDDateSpace")
-        hlayout1.addWidget(e7)
-        e8 = QLineEdit()
-        e8.setFixedHeight(35)
-        e8.setFixedWidth(105)
-        e8.setObjectName("PIDDateMonth")
-        e8.setStyleSheet("background-color: white;border-radius:5px;color:black")
-        e8.setAlignment(Qt.AlignCenter)
-        e8.setFont(QFont("Arial", 14))
-        e8.setText("Dec")
-        hlayout1.addWidget(e8)
-        e9 = QFrame()
-        e9.setFrameShape(QFrame.HLine)
-        e9.setFrameShadow(QFrame.Plain)
-        e9.setLineWidth(2)
-        e9.setObjectName("PIDDateSpace1")
-        hlayout1.addWidget(e9)
-        e10 = QLineEdit()
-        e10.setFixedHeight(35)
-        e10.setFixedWidth(105)
-        e10.setObjectName("PIDDateDay")
-        e10.setStyleSheet("background-color: white;border-radius:5px;color: black")
-        e10.setAlignment(Qt.AlignCenter)
-        e10.setFont(QFont("Arial", 14))
-        e10.setText("10")
-        hlayout1.addWidget(e10)
-        hlayout1.setSpacing(15)
-        vlayout.addLayout(hlayout1)
 
-    def setupPhaseRecog(self):
-        num_widget = self.verticalLayout.count()
-        while num_widget > 0:
-            widget = self.verticalLayout.itemAt(num_widget - 1).widget()
-            if widget.objectName() == 'PhaseRecognition':
-                break
-            num_widget -= 1
-        widget1 = QtWidgets.QWidget(self)
-        e1 = QLabel('Idle')
-        e1.setObjectName("Idle")
-        e1.setFont(QFont("Arial", 16, QFont.Bold))
-        e1.setStyleSheet("color:white;")
-        self.phase1_state = QRadioButton()
-        self.phase1_state.setChecked(False)
-        # e2.setTristate(True)
-        self.phase1_state.setObjectName("IdleCheck")
-        self.phase1_state.setStyleSheet("QRadioButton"
-                                        "{"
-                                        "color : green;"
-                                        "}"
-                                        "QRadioButton::indicator"
-                                        "{"
-                                        "width : 20px;"
-                                        "height : 20px;"
-                                        "}")
-        self.phase1_prob = QProgressBar()
-        self.phase1_prob.setObjectName("IdleProgress")
-        self.phase1_prob.setStyleSheet(DEFAULT_STYLE)
-        self.phase1_prob.setValue(10)
-        self.phase1_prob.setTextVisible(False)
-        e4 = QLabel('Marking')
-        e4.setObjectName("Marking")
-        e4.setFont(QFont("Arial", 16, QFont.Bold))
-        e4.setStyleSheet("color:white;")
-        self.phase2_state = QRadioButton()
-        self.phase2_state.setChecked(False)
-        # e2.setTristate(True)
-        self.phase2_state.setObjectName("MarkingCheck")
-        self.phase2_state.setStyleSheet("QRadioButton"
-                                        "{"
-                                        "color : green;"
-                                        "}"
-                                        "QRadioButton::indicator"
-                                        "{"
-                                        "width : 20px;"
-                                        "height : 20px;"
-                                        "}")
-        self.phase2_prob = QProgressBar()
-        self.phase2_prob.setObjectName("MarkingProgress")
-        self.phase2_prob.setStyleSheet(DEFAULT_STYLE)
-        self.phase2_prob.setValue(15)
-        self.phase2_prob.setTextVisible(False)
-        e7 = QLabel('Injection')
-        e7.setObjectName("Injection")
-        e7.setFont(QFont("Arial", 16, QFont.Bold))
-        e7.setStyleSheet("color:white;")
-        self.phase3_state = QRadioButton()
-        self.phase3_state.setChecked(True)
-        # e2.setTristate(True)
-        self.phase3_state.setObjectName("InjectionCheck")
-        self.phase3_state.setStyleSheet("QRadioButton"
-                                        "{"
-                                        "color : green;"
-                                        "}"
-                                        "QRadioButton::indicator"
-                                        "{"
-                                        "width : 20px;"
-                                        "height : 20px;"
-                                        "}")
-        self.phase3_prob = QProgressBar()
-        self.phase3_prob.setObjectName("InjectionProgress")
-        self.phase3_prob.setStyleSheet(DEFAULT_STYLE)
-        self.phase3_prob.setValue(70)
-        self.phase3_prob.setTextVisible(False)
-        e10 = QLabel('Dissection')
-        e10.setObjectName("Dissection")
-        e10.setFont(QFont("Arial", 16, QFont.Bold))
-        e10.setStyleSheet("color:white;")
-        self.phase4_state = QRadioButton()
-        self.phase4_state.setChecked(False)
-        # e2.setTristate(True)
-        self.phase4_state.setObjectName("DissectionCheck")
-        self.phase4_state.setStyleSheet("QRadioButton"
-                                        "{"
-                                        "color : green;"
-                                        "}"
-                                        "QRadioButton::indicator"
-                                        "{"
-                                        "width : 20px;"
-                                        "height : 20px;"
-                                        "}")
-        self.phase4_prob = QProgressBar()
-        self.phase4_prob.setObjectName("DissectionProgress")
-        self.phase4_prob.setStyleSheet(DEFAULT_STYLE)
-        self.phase4_prob.setValue(10)
-        self.phase4_prob.setTextVisible(False)
-        egrid = QGridLayout()
-        egrid.addWidget(e1, 0, 0)
-        egrid.addWidget(self.phase1_state, 0, 1)
-        egrid.addWidget(self.phase1_prob, 0, 2)
-        egrid.addWidget(e4, 1, 0)
-        egrid.addWidget(self.phase2_state, 1, 1)
-        egrid.addWidget(self.phase2_prob, 1, 2)
-        egrid.addWidget(e7, 2, 0)
-        egrid.addWidget(self.phase3_state, 2, 1)
-        egrid.addWidget(self.phase3_prob, 2, 2)
-        egrid.addWidget(e10, 3, 0)
-        egrid.addWidget(self.phase4_state, 3, 1)
-        egrid.addWidget(self.phase4_prob, 3, 2)
-        egrid.setAlignment(Qt.AlignCenter)
-        widget1.setLayout(egrid)
 
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
-        line.setStyleSheet("background-color: black;")
-
-        self.a1 = QLabel("AI predicted phase")
-        self.a1.setFont(QFont("Arial", 16, QFont.Bold))
-        self.a1.setStyleSheet("color: white;")
-        self.a2 = QLineEdit()
-        self.a2.setAlignment(Qt.AlignCenter)
-        self.a2.setEnabled(False)
-        self.a2.setFont(QFont("Arial", 26, QFont.Bold))
-        self.a2.setStyleSheet("color: #ff9900; background-color: #336699;")
-        self.VLayout3 = QtWidgets.QVBoxLayout()
-        self.VLayout3.addWidget(widget1)
-        self.VLayout3.addWidget(line)
-        self.VLayout3.addWidget(self.a1, alignment=Qt.AlignCenter)
-        self.VLayout3.addWidget(self.a2, alignment=Qt.AlignCenter)
-        widget.setLayout(self.VLayout3)
-
-    def e1_button_toggled(self):
-        pass
 
     def countTime(self):
         if self.flag:
-            current_time = datetime.datetime.now()
+            current_time = datetime.now()
             diff_time = (current_time - self.startTime).total_seconds()
             hour = int(diff_time // 3600)
             minute = int(diff_time % 3600 // 60)
@@ -1864,13 +1662,13 @@ class Ui_iPhaser(QMainWindow):
     def save_log_data(self):
         datas = zip(*self.log_data)
         data_dict = {}
-        # [datetime.datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
+        # [datetime.now(), self.trainee.text(), self.mentor.text(), self.bed.text(), self.pred]
         names = ["Time", "Trainee", "Trainer", "Bed", "Prediction", "Phase idle", "Phase marking", "Phase injection",
                  "Phase dissection"]
         for name, data in zip(names, datas):
             data_dict[name] = list(data)
         pd_log = pd.DataFrame.from_dict(data_dict)
-        curent_date_time = "_" + datetime.datetime.now().strftime("%H-%M-%S") + ".csv"
+        curent_date_time = "_" + datetime.now().strftime("%H-%M-%S") + ".csv"
         pd_log.to_csv(self.log_file.replace(".csv", curent_date_time), index=False, header=True)
 
 
