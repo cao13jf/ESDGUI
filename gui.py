@@ -7,8 +7,7 @@ import warnings
 import argparse
 import numpy as np
 import pandas as pd
-from threading import Thread
-import calendar
+
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
@@ -145,7 +144,18 @@ class ReportThread(QThread):
     def run(self):
         while True:
             if self.update_report:
-                report_file = generate_report(self.log_dir)
+
+                dialog = QDialog()
+                dialog.setWindowTitle("Progress")
+                layout = QVBoxLayout(dialog)
+                progress_label = QLabel("Progress: 0%")
+                progress_bar = QProgressBar()
+                layout.addWidget(progress_label)
+                layout.addWidget(progress_bar)
+                dialog.setFixedSize(300, 100)
+                dialog.show()
+
+                report_file = generate_report(self.log_dir, progress_label, progress_bar, dialog)
                 report_path = os.path.abspath(report_file)
                 QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_path))
                 self.update_report = False

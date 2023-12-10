@@ -1,4 +1,8 @@
 import os
+from glob import glob
+from PIL import Image
+from PyQt5.QtWidgets import QApplication, QProgressBar, QLabel, QVBoxLayout, QDialog
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import shutil
 import argparse
 import cv2
@@ -476,7 +480,16 @@ def equally_spaced_sampling(lst, num_samples):
     samples = [lst[i] for i in range(0, length, step)]
     return samples
 
-def generate_report(log_dir):
+class ProgressBarThread(QThread):
+    update_progress = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        super(ProgressBarThread, self).__init__(parent)
+
+    def run(self):
+        self.update_progress.emit(0)
+
+def generate_report(log_dir, progress_label, progress_bar, dialog):
     # 1080 X 1559; 6000 X 8666
     if not os.path.isdir("./reports/components"):
         os.makedirs("./reports/components")
@@ -484,9 +497,18 @@ def generate_report(log_dir):
     log_files = glob(os.path.join(log_dir, "*.csv"))
     case_names = [os.path.basename(log_file).split("_")[0] for log_file in log_files]
     case_names = list(set(case_names))
-    # TODO： 增加一个弹出的progress bar，分为下面三个阶段
+
+    # Create the progress bar thread
+    progress_thread = ProgressBarThread()
+    # Connect the progress bar signals
+    progress_thread.update_progress.connect(progress_bar.setValue)
+    # Start the progress bar thread
+    progress_thread.start()
+
     for case_name in case_names:
-        # todo: Progress bar 1/4: "Collecting information"
+        progress_label.setText("Progress: 10%")
+        progress_thread.update_progress.emit(10)
+
         log_files = glob(os.path.join(log_dir, "{}*.csv".format(case_name)))
         phases, status, trainees, train_str, mentor_str, bed, date = get_meta(log_files)
 
@@ -496,16 +518,31 @@ def generate_report(log_dir):
         pie_file = "./reports/components/{}_phase_pie.png".format(case_name)
         transition_file = "./reports/components/{}_transition.png".format(case_name)
 
-        # todo: Progress bar 2/4: "Analyzing"
+
+        progress_label.setText("Progress: 20%")
+        progress_thread.update_progress.emit(20)
         generate_phase_band(equally_spaced_sampling(phases, 1000), file_name=phase_file, colors="tab20c")
+
+        progress_label.setText("Progress: 30%")
+        progress_thread.update_progress.emit(30)
         generate_phase_band(equally_spaced_sampling(status, 1000), file_name=status_file, colors="tab20b")
+
+        progress_label.setText("Progress: 40%")
+        progress_thread.update_progress.emit(40)
         generate_phase_band(equally_spaced_sampling(trainees, 1000), file_name=trainee_file, colors="tab20c")
-        plot_pie(phases, pie_name=pie_file)
-        generate_transition(phases, transition_file)
+
+        progress_label.setText("Progress: 50%")
+        progress_thread.update_progress.emit(50)
+        plot_pie(equally_spaced_sampling(phases, 1000), pie_name=pie_file)
+
+        progress_label.setText("Progress: 60%")
+        progress_thread.update_progress.emit(60)
+        generate_transition(equally_spaced_sampling(phases, 1000), transition_file)
 
 
         # combine all infos
-        # todo: Progress bar 3/4: "Generating report"
+        progress_label.setText("Progress: 70%")
+        progress_thread.update_progress.emit(70)
         im = plt.imread("./configs/report_template_resized.png")
         sh, sw, d = im.shape
         figure(figsize=(sw, sh), dpi=600)
@@ -572,10 +609,14 @@ def generate_report(log_dir):
 
         plt.axis("off")
         # plt.show()
-        # todo: Progress bar 4/4: "Finished"
+        progress_label.setText("Progress: 80%")
+        progress_thread.update_progress.emit(80)
         save_file = "./reports/{}_report.png".format(case_name)
         plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
+
+        progress_label.setText("Progress: 100%")
+        progress_thread.update_progress.emit(100)
         plt.clf()
         plt.close()
-        # todo: Close the progress bar
+        dialog.close()
         return save_file
