@@ -15,12 +15,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 import math
+import matplotlib
+matplotlib.use('agg')
 from matplotlib.pyplot import figure
+import matplotlib.pyplot as plt
+plt.ioff()
+
 
 
 P = [252, 233, 79, 114, 159, 207, 239, 41, 41, 173, 127, 168, 138, 226, 52,
      233, 185, 110, 252, 175, 62, 211, 215, 207, 196, 160, 0, 32, 74, 135, 164, 0, 0,
      92, 53, 102, 78, 154, 6, 143, 89, 2, 206, 92, 0, 136, 138, 133, 237, 212, 0, 52,
+
      101, 164, 204, 0, 0, 117, 80, 123, 115, 210, 22, 193, 125, 17, 245, 121, 0, 186,
      189, 182, 85, 87, 83, 46, 52, 54, 238, 238, 236, 0, 0, 10, 252, 233, 89, 114, 159,
      217, 239, 41, 51, 173, 127, 178, 138, 226, 62, 233, 185, 120, 252, 175, 72, 211, 215,
@@ -385,28 +391,30 @@ def get_durations(labels):
 
 from sklearn import metrics
 from sklearn.preprocessing import normalize
-def generate_transition(labels, file_name):
+def generate_transition(labels):
     phase_dict_key = [2, 3, 4, 1]
     confusion = metrics.confusion_matrix(labels[:-1], labels[1:], labels=phase_dict_key, normalize="true")
-    # for idx in range(4):
-    #     confusion[idx, idx] = 0
-    # confusion = normalize(confusion, axis=1, norm='l1')
-    fig, ax = plt.subplots()
-    im, cbar = heatmap(confusion, phase_dict_key, phase_dict_key, ax)
-    cbar.remove()
-    frame1 = plt.gca()
-    texts = annotate_heatmap(im, valfmt="{x:.2f}")
-    frame1.axes.get_xaxis().set_visible(False)
-    frame1.axes.get_yaxis().set_visible(False)
-    frame1.axes.margins(x=0)
-    frame1.axes.margins(y=0)
 
-    # fig.tight_layout()
-    # plt.ylabel("Annotation")
-    # pstr = "Prediction {}; acc {:>10.4f}".format(base_name.split("_")[0], acc)
-    # plt.xlabel("Prediction")
-    plt.savefig(file_name, bbox_inches='tight', pad_inches=0.0)
-    plt.clf()
+    return confusion
+    # # for idx in range(4):
+    # #     confusion[idx, idx] = 0
+    # # confusion = normalize(confusion, axis=1, norm='l1')
+    # fig, ax = plt.subplots()
+    # im, cbar = heatmap(confusion, phase_dict_key, phase_dict_key, ax)
+    # cbar.remove()
+    # frame1 = plt.gca()
+    # texts = annotate_heatmap(im, valfmt="{x:.2f}")
+    # frame1.axes.get_xaxis().set_visible(False)
+    # frame1.axes.get_yaxis().set_visible(False)
+    # frame1.axes.margins(x=0)
+    # frame1.axes.margins(y=0)
+    #
+    # # fig.tight_layout()
+    # # plt.ylabel("Annotation")
+    # # pstr = "Prediction {}; acc {:>10.4f}".format(base_name.split("_")[0], acc)
+    # # plt.xlabel("Prediction")
+    # plt.savefig(file_name, bbox_inches='tight', pad_inches=0.0)
+    # plt.clf()
 
 def get_score_A(labels):
     injection_proporation = labels.count(2) / len(labels)
@@ -505,118 +513,145 @@ def generate_report(log_dir, progress_label, progress_bar, dialog):
     # Start the progress bar thread
     progress_thread.start()
 
-    for case_name in case_names:
-        progress_label.setText("Progress: 10%")
-        progress_thread.update_progress.emit(10)
+    case_name = case_names[0]
+    # progress_label.setText("Progress: 10%")
+    # progress_thread.update_progress.emit(10)
 
-        log_files = glob(os.path.join(log_dir, "{}*.csv".format(case_name)))
-        phases, status, trainees, train_str, mentor_str, bed, date = get_meta(log_files)
+    log_files = glob(os.path.join(log_dir, "{}*.csv".format(case_name)))
+    phases, status, trainees, train_str, mentor_str, bed, date = get_meta(log_files)
 
-        phase_file = "./reports/components/{}_time_phase.png".format(case_name)
-        status_file = "./reports/components/{}_time_status.png".format(case_name)
-        trainee_file = "./reports/components/{}_time_trainee.png".format(case_name)
-        pie_file = "./reports/components/{}_phase_pie.png".format(case_name)
-        transition_file = "./reports/components/{}_transition.png".format(case_name)
-
-
-        progress_label.setText("Progress: 20%")
-        progress_thread.update_progress.emit(20)
-        generate_phase_band(equally_spaced_sampling(phases, 1000), file_name=phase_file, colors="tab20c")
-
-        progress_label.setText("Progress: 30%")
-        progress_thread.update_progress.emit(30)
-        generate_phase_band(equally_spaced_sampling(status, 1000), file_name=status_file, colors="tab20b")
-
-        progress_label.setText("Progress: 40%")
-        progress_thread.update_progress.emit(40)
-        generate_phase_band(equally_spaced_sampling(trainees, 1000), file_name=trainee_file, colors="tab20c")
-
-        progress_label.setText("Progress: 50%")
-        progress_thread.update_progress.emit(50)
-        plot_pie(equally_spaced_sampling(phases, 1000), pie_name=pie_file)
-
-        progress_label.setText("Progress: 60%")
-        progress_thread.update_progress.emit(60)
-        generate_transition(equally_spaced_sampling(phases, 1000), transition_file)
+    phase_file = "./reports/components/{}_time_phase.png".format(case_name)
+    status_file = "./reports/components/{}_time_status.png".format(case_name)
+    trainee_file = "./reports/components/{}_time_trainee.png".format(case_name)
+    pie_file = "./reports/components/{}_phase_pie.png".format(case_name)
 
 
-        # combine all infos
-        progress_label.setText("Progress: 70%")
-        progress_thread.update_progress.emit(70)
-        im = plt.imread("./configs/report_template_resized.png")
-        sh, sw, d = im.shape
-        figure(figsize=(sw, sh), dpi=600)
-        fig, ax = plt.subplots()
-        ax = plt.gca()
-        ax.set_xlim(0, sw)
-        ax.set_ylim(0, sh)
-        plt.imshow(im, extent=[0, sw, 0, sh])
+    progress_label.setText("Progress: 20%")
+    progress_thread.update_progress.emit(20)
+    generate_phase_band(equally_spaced_sampling(phases, 1000), file_name=phase_file, colors="tab20c")
 
-        # add header
-        plt.text(142.2, 1430.1, train_str, fontsize=3)  # add text
-        plt.text(142.2, 1395.0, mentor_str, fontsize=3)  # add text
-        plt.text(838.8, 1430.1, bed, fontsize=3)  # add text
-        plt.text(838.8, 1395.0, date, fontsize=3)  # add text
+    progress_label.setText("Progress: 30%")
+    progress_thread.update_progress.emit(30)
+    generate_phase_band(equally_spaced_sampling(status, 1000), file_name=status_file, colors="tab20b")
 
-        # Add basic information
-        phase = Image.open(phase_file)
-        plt.imshow(phase, extent=[50.58, 1029.24, 1297.08, 1337.4])
+    progress_label.setText("Progress: 40%")
+    progress_thread.update_progress.emit(40)
+    generate_phase_band(equally_spaced_sampling(trainees, 1000), file_name=trainee_file, colors="tab20c")
 
-        status = Image.open(status_file)
-        plt.imshow(status, extent=[50.58, 1029.24, 1200.06, 1240.02])
+    progress_label.setText("Progress: 50%")
+    progress_thread.update_progress.emit(50)
+    plot_pie(equally_spaced_sampling(phases, 1000), pie_name=pie_file)
 
-        trainee = Image.open(trainee_file)
-        plt.imshow(trainee, extent=[50.58, 1029.24, 1096.2, 1143.36])
+    progress_label.setText("Progress: 60%")
+    progress_thread.update_progress.emit(60)
+    confusion_matrix = generate_transition(equally_spaced_sampling(phases, 1000))
 
-        # Add durations
-        counts = get_durations(phases)
-        locations = [[254.88, 952.38], [254.88, 908.28], [254.88, 865.08], [254.88, 822.48], [254.88, 777.6]]
-        for idx, count in enumerate(counts):
-            location = locations[idx]
-            plt.text(location[0], location[1], "{:>8d}".format(count), fontsize=4)  # add text
 
-        # add proportion
-        locations = [[453.6, 950.58], [453.6, 908.28], [453.6, 865.08], [453.6, 822.48]]
-        total = counts[-1]
-        for idx, count in enumerate(counts[:-1]):
-            location = locations[idx]
-            plt.text(location[0], location[1], "{:>2.2f}".format(count / total), fontsize=4)  # add text
+    # combine all infos
+    progress_label.setText("Progress: 70%")
+    progress_thread.update_progress.emit(70)
+    im = plt.imread("./configs/report_template_resized.png")
+    sh, sw, d = im.shape
+    figure(figsize=(sw, sh), dpi=300)
+    fig, ax = plt.subplots()
+    ax = plt.gca()
+    ax.set_xlim(0, sw)
+    ax.set_ylim(0, sh)
+    plt.imshow(im, extent=[0, sw, 0, sh])
 
-        # add pie file
-        pie_duration = Image.open(pie_file)
-        plt.imshow(pie_duration, extent=[642.6, 853.2, 779.04, 989.64])
+    # add header
+    plt.text(142.2, 1430.1, train_str, fontsize=3)  # add text
+    plt.text(142.2, 1395.0, mentor_str, fontsize=3)  # add text
+    plt.text(838.8, 1430.1, bed, fontsize=3)  # add text
+    plt.text(838.8, 1395.0, date, fontsize=3)  # add text
 
-        # add transition
-        transition = Image.open(transition_file)
-        plt.imshow(transition, extent=[693, 1009.26, 316.8, 594.48])
+    # Add basic information
+    phase = Image.open(phase_file)
+    plt.imshow(phase, extent=[50.58, 1029.24, 1297.08, 1337.4])
 
-        # Add scores
-        score_A = phases.count(3) / max(phases.count(4), 1)
-        plt.text(478.8, 519.06, "{:2.2f}".format(score_A), fontsize=4)  # add text
-        if score_A > 0.06:  #
-            score_A = "A"
-        else:
-            score_A = "A"
-        plt.text(442.8, 99, "{}".format(score_A), fontsize=4)  # add text
+    status = Image.open(status_file)
+    plt.imshow(status, extent=[50.58, 1029.24, 1200.06, 1240.02])
 
-        score_B = (get_score_B(phases) * 10 ** 6 - 60) * 100
-        plt.text(535.02, 327.6, "{:2.0f}".format(abs(score_B)), fontsize=4)  # add text
-        if score_B > 89:  #
-            score_B = "A"
-        else:
-            score_B = "A"
-        plt.text(792, 99, "{}".format(score_B), fontsize=4)  # add text
+    trainee = Image.open(trainee_file)
+    plt.imshow(trainee, extent=[50.58, 1029.24, 1096.2, 1143.36])
 
-        plt.axis("off")
-        # plt.show()
-        progress_label.setText("Progress: 80%")
-        progress_thread.update_progress.emit(80)
-        save_file = "./reports/{}_report.png".format(case_name)
-        plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
+    # Add durations
+    counts = get_durations(phases)
+    locations = [[254.88, 952.38], [254.88, 908.28], [254.88, 865.08], [254.88, 822.48], [254.88, 777.6]]
+    for idx, count in enumerate(counts):
+        location = locations[idx]
+        plt.text(location[0], location[1], "{:>8d}".format(count), fontsize=4)  # add text
 
-        progress_label.setText("Progress: 100%")
-        progress_thread.update_progress.emit(100)
-        plt.clf()
-        plt.close()
-        dialog.close()
-        return save_file
+    # add proportion
+    locations = [[453.6, 950.58], [453.6, 908.28], [453.6, 865.08], [453.6, 822.48]]
+    total = counts[-1]
+    for idx, count in enumerate(counts[:-1]):
+        location = locations[idx]
+        plt.text(location[0], location[1], "{:>2.2f}".format(count / total), fontsize=4)  # add text
+
+    # add pie file
+    pie_duration = Image.open(pie_file)
+    plt.imshow(pie_duration, extent=[642.6, 853.2, 779.04, 989.64])
+
+    # add transition
+    marking_marking = confusion_matrix[0, 0]
+    plt.text(730, 540, "{:1.1f}".format(marking_marking), fontsize=4)
+    marking_injection = confusion_matrix[0, 1]
+    plt.text(800, 540, "{:1.1f}".format(marking_injection), fontsize=4)
+    marking_dissection = confusion_matrix[0, 2]
+    plt.text(870, 540, "{:1.1f}".format(marking_dissection), fontsize=4)
+    marking_idle = confusion_matrix[0, 3]
+    plt.text(940, 540, "{:1.1f}".format(marking_idle), fontsize=4)
+    injection_marking = confusion_matrix[1, 0]
+    plt.text(730, 475, "{:1.1f}".format(injection_marking), fontsize=4)
+    injection_injection = confusion_matrix[1, 1]
+    plt.text(800, 475, "{:1.1f}".format(injection_injection), fontsize=4)
+    injection_dissection = confusion_matrix[1, 2]
+    plt.text(870, 475, "{:1.1f}".format(injection_dissection), fontsize=4)
+    injection_idle = confusion_matrix[1, 3]
+    plt.text(940, 475, "{:1.1f}".format(injection_idle), fontsize=4)
+    dissection_marking = confusion_matrix[2, 0]
+    plt.text(730, 410, "{:1.1f}".format(dissection_marking), fontsize=4)
+    dissection_injection = confusion_matrix[2, 1]
+    plt.text(800, 410, "{:1.1f}".format(dissection_injection), fontsize=4)
+    dissection_dissection = confusion_matrix[2, 2]
+    plt.text(870, 410, "{:1.1f}".format(dissection_dissection), fontsize=4)
+    dissection_idle = confusion_matrix[2, 3]
+    plt.text(940, 410, "{:1.1f}".format(dissection_idle), fontsize=4)
+    idle_marking = confusion_matrix[3, 0]
+    plt.text(730, 345, "{:1.1f}".format(idle_marking), fontsize=4)
+    idle_injection = confusion_matrix[3, 1]
+    plt.text(800, 345, "{:1.1f}".format(idle_injection), fontsize=4)
+    idle_dissection = confusion_matrix[3, 2]
+    plt.text(870, 345, "{:1.1f}".format(idle_dissection), fontsize=4)
+    idle_idle = confusion_matrix[3, 3]
+    plt.text(940, 345, "{:1.1f}".format(idle_idle), fontsize=4)
+
+    # Add scores
+    score_A = phases.count(3) / max(phases.count(4), 1)
+    plt.text(478.8, 519.06, "{:2.2f}".format(score_A), fontsize=4)  # add text
+    if score_A > 0.06:  #
+        score_A = "A"
+    else:
+        score_A = "A"
+    plt.text(442.8, 99, "{}".format(score_A), fontsize=4)  # add text
+
+    score_B = (get_score_B(phases) * 10 ** 6 - 60) * 100
+    plt.text(535.02, 327.6, "{:2.0f}".format(abs(score_B)), fontsize=4)  # add text
+    if score_B > 89:  #
+        score_B = "A"
+    else:
+        score_B = "A"
+    plt.text(792, 99, "{}".format(score_B), fontsize=4)  # add text
+
+    plt.axis("off")
+    # plt.show()
+    progress_label.setText("Progress: 80%")
+    progress_thread.update_progress.emit(80)
+    save_file = "./reports/{}_report.png".format(case_name)
+    # plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
+    plt.show()
+    plt.clf()
+    plt.close()
+    dialog.close()
+    return save_file

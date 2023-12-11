@@ -91,7 +91,7 @@ class ImageProcessingThread(QThread):
         self.end_y = end_y
         self.frames_to_process = []
         self.phaseseg = PhaseCom(arg=cfg)
-        self.processing_interval = 3  # Control the
+        self.processing_interval = 20  # Control the
 
     def run(self):
         while True:
@@ -120,16 +120,28 @@ class VideoReadThread(QThread):
         self.frame_index = 0
 
     def run(self):
+        # time.sleep(30)
         self._is_running = True
         camera = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
         camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        # camera.set(cv2.CAP_PROP_FPS, 17)  # TODO: 检查fps设置
 
         while self._is_running:
             ret, frame = camera.read()
             if ret:
+                # time.sleep(1 / 50)
                 self.frame_index += 1
                 self.frame_data.emit(frame, self.frame_index)
+
+            if not ret:
+                camera.release()
+                self.frame_index = 0
+                camera = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
+                camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+                camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+                camera.set(cv2.CAP_PROP_FPS, 17)
+                continue
         camera.release()
 
 # TODO：我把生成报告的代码移到了单独的thread，但是目前还是很慢，理论上而言应该只需要很短的时间(见tem.py)。检查以下这里的原因。
@@ -685,6 +697,7 @@ class Ui_iPhaser(QMainWindow):
         hlayout.addWidget(e2)
         e3 = QFrame()
         e3.setFrameShape(QFrame.HLine)
+        e3.setStyleSheet("color: white;")
         e3.setFrameShadow(QFrame.Plain)
         e3.setLineWidth(2)
         e3.setObjectName("PIDSpace")
@@ -717,6 +730,7 @@ class Ui_iPhaser(QMainWindow):
         hlayout1.addWidget(e6)
         e7 = QFrame()
         e7.setFrameShape(QFrame.HLine)
+        e7.setStyleSheet("color: white;")
         e7.setFrameShadow(QFrame.Plain)
         e7.setLineWidth(2)
         e7.setObjectName("PIDDateSpace")
@@ -732,6 +746,7 @@ class Ui_iPhaser(QMainWindow):
         hlayout1.addWidget(e8)
         e9 = QFrame()
         e9.setFrameShape(QFrame.HLine)
+        e9.setStyleSheet("color: white;")
         e9.setFrameShadow(QFrame.Plain)
         e9.setLineWidth(2)
         e9.setObjectName("PIDDateSpace1")
@@ -875,7 +890,7 @@ class Ui_iPhaser(QMainWindow):
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
-        line.setStyleSheet("background-color: black;")
+        line.setStyleSheet("background-color: white;")
 
         self.a1 = QLabel("Predicted phase")
         self.a1.setFont(QFont("Arial", 16, QFont.Bold))
@@ -1026,7 +1041,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
-        self.timer.start(20)
+        self.timer.start(50)
 
         self.camera_thread = VideoReadThread()
         self.camera_thread.frame_data.connect(self.update_camera_frame)
@@ -1034,6 +1049,7 @@ class Ui_iPhaser(QMainWindow):
         self.camera_thread.start()
 
         self.canvas_draw_thread = None
+        self.frame_index = 0
         self.processing_thread = ImageProcessingThread(start_x=self.start_x,
                                                        end_x=self.end_x,
                                                        start_y=self.start_y,
@@ -1088,7 +1104,7 @@ class Ui_iPhaser(QMainWindow):
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
         frame = self.camera_frame
-        # time.sleep(0.05)
+        print(self.frame_index)
         if frame is not None:
             frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
@@ -1656,7 +1672,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture(0)
+        capture = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
