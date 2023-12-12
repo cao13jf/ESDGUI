@@ -514,8 +514,8 @@ def generate_report(log_dir, progress_label, progress_bar, dialog):
     progress_thread.start()
 
     case_name = case_names[0]
-    # progress_label.setText("Progress: 10%")
-    # progress_thread.update_progress.emit(10)
+    progress_label.setText("Progress: 10%")
+    progress_thread.update_progress.emit(10)
 
     log_files = glob(os.path.join(log_dir, "{}*.csv".format(case_name)))
     phases, status, trainees, train_str, mentor_str, bed, date = get_meta(log_files)
@@ -589,6 +589,9 @@ def generate_report(log_dir, progress_label, progress_bar, dialog):
         location = locations[idx]
         plt.text(location[0], location[1], "{:>2.2f}".format(count / total), fontsize=4)  # add text
 
+    progress_label.setText("Progress: 80%")
+    progress_thread.update_progress.emit(80)
+
     # add pie file
     pie_duration = Image.open(pie_file)
     plt.imshow(pie_duration, extent=[642.6, 853.2, 779.04, 989.64])
@@ -645,13 +648,12 @@ def generate_report(log_dir, progress_label, progress_bar, dialog):
     plt.text(792, 99, "{}".format(score_B), fontsize=4)  # add text
 
     plt.axis("off")
-    # plt.show()
-    progress_label.setText("Progress: 80%")
-    progress_thread.update_progress.emit(80)
+    progress_label.setText("Progress: 90%")
+    progress_thread.update_progress.emit(90)
     save_file = "./reports/{}_report.png".format(case_name)
     plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
-    # plt.show()
-    # plt.clf()
-    # plt.close()
+    progress_label.setText("Progress: 100%")
+    progress_thread.update_progress.emit(100)
+
     dialog.close()
     return save_file

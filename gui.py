@@ -129,7 +129,7 @@ class VideoReadThread(QThread):
     def run(self):
         # time.sleep(30)
         self._is_running = True
-        camera = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
+        camera = cv2.VideoCapture("/home/jeffery/Downloads/extracted_sample.mp4")
         camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         # camera.set(cv2.CAP_PROP_FPS, 17)  # TODO: 检查fps设置
@@ -144,7 +144,7 @@ class VideoReadThread(QThread):
             if not ret:
                 camera.release()
                 self.frame_index = 0
-                camera = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
+                camera = cv2.VideoCapture("/home/jeffery/Downloads/extracted_sample.mp4")
                 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                 camera.set(cv2.CAP_PROP_FPS, 17)
@@ -249,7 +249,7 @@ class Ui_iPhaser(QMainWindow):
         old_pos = self.frameGeometry().getRect()
         curr_x = old_pos[2]
         curr_y = old_pos[3]
-        df = pd.read_excel('dataset/Example_frame.xlsx', engine='openpyxl')
+        df = pd.read_excel('dataset/Example_frame_colo.xlsx', engine='openpyxl')
         self.annotations = df["Phase"].tolist()
         self.redo = False
         self.point_size = 1
@@ -309,6 +309,7 @@ class Ui_iPhaser(QMainWindow):
         self.centralwidget = QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.resizeEvent = self.windowResized
+        self.updating = True
 
         # # 在主窗口中添加usbVideo控件
         # self.usbVideo = usbVideo(self.size, parent=self.centralwidget)
@@ -1054,10 +1055,6 @@ class Ui_iPhaser(QMainWindow):
 
         self.process_frames = False
 
-        # self.timer2 = QTimer(self)
-        # self.timer2.timeout.connect(self.update_plot)
-        # self.timer2.start(1000)  #
-
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
         self.timer.start(50)
@@ -1123,8 +1120,8 @@ class Ui_iPhaser(QMainWindow):
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
         frame = self.camera_frame
-        print(self.frame_index)
-        if frame is not None:
+        # print(self.frame_index)
+        if frame is not None and self.updating:
             frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
                 self.processing_thread.add_frame(frame)
@@ -1584,6 +1581,7 @@ class Ui_iPhaser(QMainWindow):
     def stop_thread(self):
         self.plot_thread.stop()
         self.processing_thread.stop()
+        self.updating = False
 
 
     def enableReport(self, report_file_path):
@@ -1695,7 +1693,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture("dataset/Case_D_extracted.MP4")
+        capture = cv2.VideoCapture("/home/jeffery/Downloads/extracted_sample.mp4")
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
