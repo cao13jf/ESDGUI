@@ -82,7 +82,7 @@ def add_text(fc, results, fps, nt_index, frame):
 
 class ImageProcessingThread(QThread):
     processed_frame = pyqtSignal(np.ndarray)
-
+    processing_stop_signal = pyqtSignal()
     def __init__(self, start_x, end_x, start_y, end_y, cfg):
         super().__init__()
         self.start_x = start_x
@@ -92,14 +92,17 @@ class ImageProcessingThread(QThread):
         self.frames_to_process = []
         self.phaseseg = PhaseCom(arg=cfg)
         self.processing_interval = 20  # Control the
+        self.processing_stop = False
 
     def run(self):
-        while True:
+        while not self.processing_stop:
             if len(self.frames_to_process) >= self.processing_interval:
                 frame = self.frames_to_process[-1]
                 pred = self.process_image(frame)
                 self.frames_to_process = []
                 self.processed_frame.emit(pred)
+            if self.processing_stop:
+                break
 
     def process_image(self, cv_img):
         # cv_img = img[self.start_x:self.end_x, self.start_y:self.end_y]  # Crop images
@@ -110,6 +113,10 @@ class ImageProcessingThread(QThread):
 
     def add_frame(self, frame):
         self.frames_to_process.append(frame)
+
+    def stop(self):
+        self.processing_stop = True
+        self.processing_stop_signal.emit()
 
 class VideoReadThread(QThread):
     frame_data = pyqtSignal(np.ndarray, int)
@@ -142,7 +149,10 @@ class VideoReadThread(QThread):
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                 camera.set(cv2.CAP_PROP_FPS, 17)
                 continue
+
         camera.release()
+
+
 
 # TODO：我把生成报告的代码移到了单独的thread，但是目前还是很慢，理论上而言应该只需要很短的时间(见tem.py)。检查以下这里的原因。
 class ReportThread(QThread):
@@ -178,15 +188,17 @@ class ReportThread(QThread):
 
 class PlotCurveThread(QThread):
     ploted_curve_array = pyqtSignal(np.ndarray)
+    plot_stop_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
         self.processing_interval = 10
         self.data_to_plot = []
+        self.plot_stop=False
 
     def run(self):
         prev_time = int(time.time())
-        while True:
+        while not self.plot_stop:
             cur_time = int(time.time())
             if cur_time > prev_time and len(self.data_to_plot) > 0:
                 prev_time = cur_time
@@ -212,9 +224,15 @@ class PlotCurveThread(QThread):
                 image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
 
                 self.ploted_curve_array.emit(image)
+            if self.plot_stop:
+                break
 
     def add_data(self, data):
         self.data_to_plot.append(data)
+
+    def stop(self):
+        self.plot_stop = True
+        self.plot_stop_signal.emit()
 
 
 class Ui_iPhaser(QMainWindow):
@@ -509,6 +527,7 @@ class Ui_iPhaser(QMainWindow):
                                         "min-width: 8em;"
                                         "}")
         self.reportButton.setFixedSize(280, 70)
+        self.reportButton.clicked.connect(self.stop_thread)
         self.reportButton.clicked.connect(self.generateReport)
         hbox_2.addWidget(self.reportButton)
         hbox_2.setAlignment(Qt.AlignCenter)
@@ -1561,6 +1580,10 @@ class Ui_iPhaser(QMainWindow):
                                         "}")
 
         self.report_thread.report_signal(generate_flag=True)
+
+    def stop_thread(self):
+        self.plot_thread.stop()
+        self.processing_thread.stop()
 
 
     def enableReport(self, report_file_path):

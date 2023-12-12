@@ -649,9 +649,9 @@ def generate_report(log_dir, progress_label, progress_bar, dialog):
     progress_label.setText("Progress: 80%")
     progress_thread.update_progress.emit(80)
     save_file = "./reports/{}_report.png".format(case_name)
-    # plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
-    plt.show()
-    plt.clf()
-    plt.close()
+    plt.savefig(save_file, bbox_inches='tight', dpi=300, pad_inches=0.0)
+    # plt.show()
+    # plt.clf()
+    # plt.close()
     dialog.close()
     return save_file
