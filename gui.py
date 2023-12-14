@@ -91,7 +91,7 @@ class ImageProcessingThread(QThread):
         self.end_y = end_y
         self.frames_to_process = []
         self.phaseseg = PhaseCom(arg=cfg)
-        self.processing_interval = 20  # Control the
+        self.processing_interval = 3  # Control the
         self.processing_stop = False
 
     def run(self):
@@ -129,22 +129,22 @@ class VideoReadThread(QThread):
     def run(self):
         # time.sleep(30)
         self._is_running = True
-        camera = cv2.VideoCapture("/home/jeffery/Downloads/extracted_sample.mp4")
+        camera = cv2.VideoCapture("./dataset/Case_D.MP4")
         camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        # camera.set(cv2.CAP_PROP_FPS, 17)  # TODO: 检查fps设置
+        camera.set(cv2.CAP_PROP_FPS, 50)  # TODO: 检查fps设置
 
         while self._is_running:
             ret, frame = camera.read()
             if ret:
-                # time.sleep(1 / 50)
+                time.sleep(1 / 50)
                 self.frame_index += 1
                 self.frame_data.emit(frame, self.frame_index)
 
             if not ret:
                 camera.release()
                 self.frame_index = 0
-                camera = cv2.VideoCapture("/home/jeffery/Downloads/extracted_sample.mp4")
+                camera = cv2.VideoCapture("./dataset/Case_D.MP4")
                 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                 camera.set(cv2.CAP_PROP_FPS, 17)
@@ -1057,7 +1057,7 @@ class Ui_iPhaser(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
-        self.timer.start(50)
+        self.timer.start(20)
 
         self.camera_thread = VideoReadThread()
         self.camera_thread.frame_data.connect(self.update_camera_frame)
@@ -1083,7 +1083,7 @@ class Ui_iPhaser(QMainWindow):
         self.report_thread = ReportThread("../Records")
         self.report_thread.out_file_path.connect(self.enableReport)
         self.report_thread.moveToThread(QCoreApplication.instance().thread())
-        self.report_thread.start()
+        # self.report_thread.start()
 
     def windowResized(self, event):
         # Get the current window size
@@ -1189,11 +1189,11 @@ class Ui_iPhaser(QMainWindow):
 
         return random_numbers
     def update_pred(self, pred):
-        phase_dict = {'idle': 1, 'marking': 2, 'injection': 3, 'dissection': 4}
-        annotation_phase = self.annotations[int(self.frame_index / 50)]
+        # phase_dict = {'idle': 1, 'marking': 2, 'injection': 3, 'dissection': 4}
+        # annotation_phase = self.annotations[int(self.frame_index / 50)]
 
-        pred_index = phase_dict[annotation_phase]
-        pred = np.array(self.generate_random_numbers(pred_index))
+        # pred_index = phase_dict[annotation_phase]
+        # pred = np.array(self.generate_random_numbers(pred_index))
 
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
@@ -1564,7 +1564,7 @@ class Ui_iPhaser(QMainWindow):
             self.duraSecond.setText('{:02d}'.format(second))
 
     def generateReport(self):
-
+        self.report_thread.start()
         self.reportButton.setEnabled(False)
         self.reportButton.setStyleSheet("QPushButton"
                                         "{"
@@ -1693,7 +1693,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture("/home/jeffery/Downloads/extracted_sample.mp4")
+        capture = cv2.VideoCapture("./dataset/Case_D.MP4")
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
