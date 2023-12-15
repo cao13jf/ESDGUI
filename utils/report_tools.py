@@ -227,7 +227,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
 # Referred to https://stackoverflow.com/questions/59638155/how-to-set-0-to-white-at-a-uneven-color-ramp
 def generate_phase_band(labels, file_name="tem.png", colors=None):
-    labels = [x + 1 for x in labels]
+    labels = [x for x in labels]
     len_labels = len(labels)
     x, y = np.meshgrid(np.linspace(0, len_labels, len_labels+1), np.linspace(0, 1, 2))
     z_gt = np.array([labels])
