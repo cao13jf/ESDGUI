@@ -205,7 +205,7 @@ class PlotCurveThread(QThread):
                 cur_data = self.data_to_plot[-1][0]
                 time_len = self.data_to_plot[-1][1] + 2
                 self.data_to_plot = []
-                fig = Figure(figsize=(3.2, 3.5), dpi=80)
+                fig = Figure(figsize=(5.7, 3.4), dpi=80)
                 fig.patch.set_facecolor('lightgray')
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
@@ -217,7 +217,6 @@ class PlotCurveThread(QThread):
                 ax.set_xlim(0, 8)
                 ax.set_ylim(-0.02, max(np.max(cur_data) * 5 / 4, 0.1))
                 ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-
                 # Render the figure to a RGB array
                 canvas.draw()
                 width, height = fig.get_size_inches() * fig.get_dpi()
