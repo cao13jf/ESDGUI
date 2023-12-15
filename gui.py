@@ -92,12 +92,12 @@ class ImageProcessingThread(QThread):
         self.frames_to_process = []
         self.frames_to_process_len = 0
         self.phaseseg = PhaseCom(arg=cfg)
-        self.processing_interval = 3  # Control the
+        self.processing_interval = 2  # Control the
         self.processing_stop = False
 
     def run(self):
         while not self.processing_stop:
-            if self.frames_to_process_len > 3:
+            if self.frames_to_process_len >= 1:
                 frame = self.frames_to_process
                 pred = self.process_image(frame)
                 self.frames_to_process = []
@@ -132,7 +132,7 @@ class VideoReadThread(QThread):
     def run(self):
         # time.sleep(30)
         self._is_running = True
-        camera = cv2.VideoCapture(0)
+        camera = cv2.VideoCapture(1)
         camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         # camera.set(cv2.CAP_PROP_FPS, 50)  # TODO: 检查fps设置
@@ -146,7 +146,7 @@ class VideoReadThread(QThread):
             if not ret:
                 camera.release()
                 self.frame_index = 0
-                camera = cv2.VideoCapture(0)
+                camera = cv2.VideoCapture(1)
                 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                 camera.set(cv2.CAP_PROP_FPS, 17)
@@ -196,17 +196,19 @@ class PlotCurveThread(QThread):
         super().__init__()
         self.processing_interval = 10
         self.data_to_plot = []
+        self.data_to_plot_len = 0
         self.plot_stop=False
 
     def run(self):
         prev_time = int(time.time())
         while not self.plot_stop:
             cur_time = int(time.time())
-            if cur_time > prev_time and len(self.data_to_plot) > 0:
+            if cur_time > prev_time and self.data_to_plot_len >= self.processing_interval:
                 prev_time = cur_time
-                cur_data = self.data_to_plot[-1][0]
-                time_len = self.data_to_plot[-1][1] + 2
+                cur_data = self.data_to_plot[0]
+                time_len = self.data_to_plot[1] + 2
                 self.data_to_plot = []
+                self.data_to_plot_len = 0
                 fig = Figure(figsize=(5.7, 3.4), dpi=80)
                 fig.patch.set_facecolor('lightgray')
                 canvas = FigureCanvas(fig)
@@ -229,7 +231,8 @@ class PlotCurveThread(QThread):
                 break
 
     def add_data(self, data):
-        self.data_to_plot.append(data)
+        self.data_to_plot = data
+        self.data_to_plot_len += 1
 
     def stop(self):
         self.plot_stop = True
@@ -1058,12 +1061,16 @@ class Ui_iPhaser(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_image)
-        self.timer.start(20)
+        self.timer.start(30)
 
-        self.camera_thread = VideoReadThread()
-        self.camera_thread.frame_data.connect(self.update_camera_frame)
-        self.camera_thread.moveToThread(QCoreApplication.instance().thread())
-        self.camera_thread.start()
+        self.camera = cv2.VideoCapture(1)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+        # self.camera_thread = VideoReadThread()
+        # self.camera_thread.frame_data.connect(self.update_camera_frame)
+        # self.camera_thread.moveToThread(QCoreApplication.instance().thread())
+        # self.camera_thread.start()
 
         self.canvas_draw_thread = None
         self.frame_index = 0
@@ -1120,17 +1127,18 @@ class Ui_iPhaser(QMainWindow):
         """Convert from an opencv image to QPixmap"""
         # Collect settings of functional keys
         # cv_img = cv_img[30:1050, 695:1850]
-        frame = self.camera_frame
+        ret, frame = self.camera.read()
         # print(self.frame_index)
         if frame is not None and self.updating:
             frame = frame[self.start_x:self.end_x, self.start_y:self.end_y]
             if self.WORKING:
                 self.processing_thread.add_frame(frame)
+                self.update_table()
+
                 self.plot_thread.add_data([np.array(self.nt_indexes), int(time.time()) - self.start_second])
                 self.display_frame(frame)
                 if self.curve_array is not None:
                     self.display_curve(self.curve_array)
-                self.update_table()
 
         # update the online analytics box
                 self.current_time = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
@@ -1196,7 +1204,7 @@ class Ui_iPhaser(QMainWindow):
         # pred_index = phase_dict[annotation_phase]
         # pred = np.array(self.generate_random_numbers(pred_index))
 
-        print(pred)
+        print(datetime.now())
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
         prob = np.exp(pred) / sum(np.exp(pred))
@@ -1695,7 +1703,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture(0)
+        capture = cv2.VideoCapture(1)
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
