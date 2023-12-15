@@ -90,16 +90,18 @@ class ImageProcessingThread(QThread):
         self.start_y = start_y
         self.end_y = end_y
         self.frames_to_process = []
+        self.frames_to_process_len = 0
         self.phaseseg = PhaseCom(arg=cfg)
         self.processing_interval = 3  # Control the
         self.processing_stop = False
 
     def run(self):
         while not self.processing_stop:
-            if len(self.frames_to_process) >= self.processing_interval:
-                frame = self.frames_to_process[-1]
+            if self.frames_to_process_len > 3:
+                frame = self.frames_to_process
                 pred = self.process_image(frame)
                 self.frames_to_process = []
+                self.frames_to_process_len = 0
                 self.processed_frame.emit(pred)
             if self.processing_stop:
                 break
@@ -112,7 +114,8 @@ class ImageProcessingThread(QThread):
         return pred
 
     def add_frame(self, frame):
-        self.frames_to_process.append(frame)
+        self.frames_to_process = frame
+        self.frames_to_process_len += 1
 
     def stop(self):
         self.processing_stop = True
@@ -129,22 +132,21 @@ class VideoReadThread(QThread):
     def run(self):
         # time.sleep(30)
         self._is_running = True
-        camera = cv2.VideoCapture("./dataset/Case_D.MP4")
+        camera = cv2.VideoCapture(0)
         camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        camera.set(cv2.CAP_PROP_FPS, 50)  # TODO: 检查fps设置
+        # camera.set(cv2.CAP_PROP_FPS, 50)  # TODO: 检查fps设置
 
         while self._is_running:
             ret, frame = camera.read()
             if ret:
-                time.sleep(1 / 50)
                 self.frame_index += 1
                 self.frame_data.emit(frame, self.frame_index)
 
             if not ret:
                 camera.release()
                 self.frame_index = 0
-                camera = cv2.VideoCapture("./dataset/Case_D.MP4")
+                camera = cv2.VideoCapture(0)
                 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                 camera.set(cv2.CAP_PROP_FPS, 17)
@@ -1194,6 +1196,7 @@ class Ui_iPhaser(QMainWindow):
         # pred_index = phase_dict[annotation_phase]
         # pred = np.array(self.generate_random_numbers(pred_index))
 
+        print(pred)
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
         prob = np.exp(pred) / sum(np.exp(pred))
@@ -1692,7 +1695,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture("./dataset/Case_D.MP4")
+        capture = cv2.VideoCapture(0)
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
