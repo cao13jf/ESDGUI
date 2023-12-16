@@ -211,7 +211,7 @@ class PlotCurveThread(QThread):
                 fig.patch.set_facecolor('lightgray')
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
-                ax.plot(np.linspace(1, time_len, cur_data.shape[0]) / 60, cur_data, linewidth=4)
+                ax.plot(np.linspace(1, time_len, cur_data.shape[0]) / 60, cur_data, linewidth=2)
                 ax.set_xlabel("Time / Minute")
                 ax.set_ylabel("Normalized Transition Index")
                 ax.grid(True, axis='y')
@@ -1226,8 +1226,8 @@ class Ui_iPhaser(QMainWindow):
         if self.prev_second == 0:
             self.prev_second = int(time.time())
         self.cur_sceond = int(time.time())
-        if len(self.log_data) > 1 and (self.cur_sceond > self.prev_second):
-            multi_el = self.cur_sceond - self.prev_second
+        if len(self.log_data) > 1:
+            multi_el = 1 # self.cur_sceond - self.prev_second
             self.prev_second = self.cur_sceond
             prev_pred = self.log_data[-2][-5]
             cur_pred = self.log_data[-1][-5]
@@ -1238,7 +1238,8 @@ class Ui_iPhaser(QMainWindow):
             else:
                 self.transitions += [self.transitions[-1]] * multi_el
         else:
-            self.transitions.append(0)
+            self.transitions = [0]
+        print("*"*10, self.transitions[-1])
         self.nt_indexes.append(self.transitions[-1] / 2.0 / len(self.transitions) * 10)
 
 
