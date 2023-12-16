@@ -546,7 +546,7 @@ class Ui_iPhaser(QMainWindow):
                                         "min-width: 8em;"
                                         "}")
         self.reportButton.setFixedSize(280, 70)
-        self.reportButton.clicked.connect(self.stop_thread)
+        # self.reportButton.clicked.connect(self.stop_thread)
         self.reportButton.clicked.connect(self.generateReport)
         hbox_2.addWidget(self.reportButton)
         hbox_2.setAlignment(Qt.AlignCenter)
