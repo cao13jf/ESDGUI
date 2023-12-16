@@ -80,6 +80,20 @@ def add_text(fc, results, fps, nt_index, frame):
 
     return frame
 
+class CustomTableDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        super().paint(painter, option, index)
+
+        if option.state & QStyle.State_Selected:
+            painter.save()
+            font = QFont()
+            font.setPointSize(12)
+            font.setBold(True)
+            painter.setFont(font)
+            painter.fillRect(option.rect, QBrush(QColor("lightgrey")))
+            painter.setPen(QPen(QColor("black")))
+            painter.drawText(option.rect, Qt.AlignCenter, index.data())
+            painter.restore()
 
 class ImageProcessingThread(QThread):
     processed_frame = pyqtSignal(np.ndarray)
@@ -366,6 +380,7 @@ class Ui_iPhaser(QMainWindow):
         self.settingButton.setObjectName('SettingButton')
 
         self.startButton = QPushButton(self)
+        self.startButton.setEnabled(True)
         # self.startButton.setFont(QFont("Arial",12, QFont.Bold))
         self.startButton.setGeometry(QtCore.QRect(500, self.height() - 200, 80, 80))
         self.startButton.setStyleSheet("background-color: DarkGreen;")
@@ -377,6 +392,7 @@ class Ui_iPhaser(QMainWindow):
         self.startButton.pressed.connect(self.onButtonClickStart)
 
         self.stopButton = QPushButton(self)
+        self.stopButton.setEnabled(False)
         # self.stopButton.setFont(QFont("Arial",12, QFont.Bold))
         self.stopButton.setGeometry(QtCore.QRect(600, self.height() - 200, 80, 80))
         self.stopButton.setStyleSheet("background-color:DarkGrey;")
@@ -594,6 +610,12 @@ class Ui_iPhaser(QMainWindow):
         self.canvas_nt.setSizePolicy(size_policy)
         LowerLowerLayout.addWidget(self.canvas_nt)
         self.table = QTableWidget(self)
+        self.table.setStyleSheet("""
+        QTableWidget::item:selected {
+            background-color: transparent;
+        }
+        """)
+        self.table.setItemDelegate(CustomTableDelegate())
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setStyleSheet("QTableView { background-color: lightgrey; border: none}")
         self.table.verticalHeader().setVisible(False)
@@ -604,8 +626,7 @@ class Ui_iPhaser(QMainWindow):
         header.setStyleSheet("background-color: darkgrey; color: black")
         header.setSectionResizeMode(QHeaderView.Stretch)
         header.setFixedHeight(50)
-
-        self.table.setFixedSize(390, 300)
+        self.table.setFixedSize(390, 330)
         self.table.setRowCount(5)
         self.table.setItem(0, 0, QTableWidgetItem("Marking"))
         self.table.setItem(1, 0, QTableWidgetItem("Injection"))
@@ -614,6 +635,7 @@ class Ui_iPhaser(QMainWindow):
         self.table.setItem(4, 0, QTableWidgetItem("Total"))
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+
         font = QFont()
         font.setBold(True)
         font.setPointSize(12)
@@ -716,6 +738,7 @@ class Ui_iPhaser(QMainWindow):
         e2.setAlignment(Qt.AlignCenter)
         e2.setFont(QFont("Arial", 14))
         e2.setText("Jenny")
+        e2.setEnabled(False)
         hlayout.addWidget(e2)
         e3 = QFrame()
         e3.setFrameShape(QFrame.HLine)
@@ -725,6 +748,7 @@ class Ui_iPhaser(QMainWindow):
         e3.setObjectName("PIDSpace")
         hlayout.addWidget(e3)
         e4 = QLineEdit()
+        e4.setEnabled(False)
         e4.setFixedHeight(35)
         e4.setFixedWidth(180)
         e4.setObjectName("PID2")
@@ -742,6 +766,7 @@ class Ui_iPhaser(QMainWindow):
         vlayout.addWidget(e5)
         hlayout1 = QHBoxLayout()
         e6 = QLineEdit()
+        e6.setEnabled(False)
         e6.setFixedHeight(35)
         e6.setFixedWidth(105)
         e6.setObjectName("PIDDateYear")
@@ -758,6 +783,7 @@ class Ui_iPhaser(QMainWindow):
         e7.setObjectName("PIDDateSpace")
         hlayout1.addWidget(e7)
         e8 = QLineEdit()
+        e8.setEnabled(False)
         e8.setFixedHeight(35)
         e8.setFixedWidth(105)
         e8.setObjectName("PIDDateMonth")
@@ -774,6 +800,7 @@ class Ui_iPhaser(QMainWindow):
         e9.setObjectName("PIDDateSpace1")
         hlayout1.addWidget(e9)
         e10 = QLineEdit()
+        e10.setEnabled(False)
         e10.setFixedHeight(35)
         e10.setFixedWidth(105)
         e10.setObjectName("PIDDateDay")
@@ -950,18 +977,22 @@ class Ui_iPhaser(QMainWindow):
 
         # Create the gray rectangles
         self.rect1 = QLineEdit()
+        self.rect1.setEnabled(False)
         self.rect1.setStyleSheet("background-color: #336699; color: white;")
         self.rect1.setFixedWidth(300)
         self.rect1.setFixedHeight(30)
         self.rect2 = QLineEdit()
+        self.rect2.setEnabled(False)
         self.rect2.setStyleSheet("background-color: #336699; color: white;")
         self.rect2.setFixedWidth(300)
         self.rect2.setFixedHeight(30)
         self.rect3 = QLineEdit()
+        self.rect3.setEnabled(False)
         self.rect3.setStyleSheet("background-color: #336699; color: white;")
         self.rect3.setFixedWidth(300)
         self.rect3.setFixedHeight(30)
         self.rect4 = QLineEdit()
+        self.rect4.setEnabled(False)
         self.rect4.setStyleSheet("background-color: #336699; color: white;")
         self.rect4.setFixedWidth(300)
         self.rect4.setFixedHeight(30)
@@ -1388,6 +1419,7 @@ class Ui_iPhaser(QMainWindow):
         e2.setFont(QFont("Arial", 16, QFont.Bold))
         e2.setStyleSheet("color:white;")
         e3 = QLineEdit()
+        e3.setEnabled(False)
         e3.setFixedHeight(35)
         e3.setObjectName("MentorInput")
         e3.setStyleSheet("background-color: #336699;color: white")
@@ -1396,6 +1428,7 @@ class Ui_iPhaser(QMainWindow):
         e3.setAlignment(Qt.AlignCenter)
         self.mentor = e3
         e4 = QLineEdit()
+        e4.setEnabled(False)
         e4.setFixedHeight(35)
         e4.setObjectName("LesionLocationInput")
         e4.setStyleSheet("background-color: #336699;color: white")
@@ -1412,6 +1445,7 @@ class Ui_iPhaser(QMainWindow):
         e6.setFont(QFont("Arial", 16, QFont.Bold))
         e6.setStyleSheet("color:white;")
         e7 = QLineEdit()
+        e7.setEnabled(False)
         e7.setFixedHeight(35)
         e7.setObjectName("TraineeInput")
         e7.setStyleSheet("background-color: #336699;color: white")
@@ -1420,6 +1454,7 @@ class Ui_iPhaser(QMainWindow):
         e7.setAlignment(Qt.AlignCenter)
         self.trainee = e7
         e8 = QLineEdit()
+        e8.setEnabled(False)
         e8.setFixedHeight(35)
         e8.setObjectName("BedInput")
         e8.setStyleSheet("background-color: #336699;color: white")
