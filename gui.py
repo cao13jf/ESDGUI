@@ -2,6 +2,7 @@ import os
 import torch
 import cv2
 import sys
+sys.setswitchinterval(0.000001)
 import time
 import warnings
 import argparse
@@ -132,10 +133,10 @@ class VideoReadThread(QThread):
     def run(self):
         # time.sleep(30)
         self._is_running = True
-        camera = cv2.VideoCapture(1)
+        camera = cv2.VideoCapture(0)
         camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        # camera.set(cv2.CAP_PROP_FPS, 50)  # TODO: 检查fps设置
+        # camera.set(cv2.CAP_PROP_FPS, 50)
 
         while self._is_running:
             ret, frame = camera.read()
@@ -146,7 +147,7 @@ class VideoReadThread(QThread):
             if not ret:
                 camera.release()
                 self.frame_index = 0
-                camera = cv2.VideoCapture(1)
+                camera = cv2.VideoCapture(0)
                 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                 camera.set(cv2.CAP_PROP_FPS, 17)
@@ -154,9 +155,6 @@ class VideoReadThread(QThread):
 
         camera.release()
 
-
-
-# TODO：我把生成报告的代码移到了单独的thread，但是目前还是很慢，理论上而言应该只需要很短的时间(见tem.py)。检查以下这里的原因。
 class ReportThread(QThread):
     out_file_path = pyqtSignal(str)
 
@@ -213,13 +211,13 @@ class PlotCurveThread(QThread):
                 fig.patch.set_facecolor('lightgray')
                 canvas = FigureCanvas(fig)
                 ax = fig.add_subplot(1, 1, 1)
-                ax.plot(np.linspace(1, time_len, cur_data.shape[0]) / 60, cur_data, linewidth=6)
+                ax.plot(np.linspace(1, time_len, cur_data.shape[0]) / 60, cur_data, linewidth=4)
                 ax.set_xlabel("Time / Minute")
                 ax.set_ylabel("Normalized Transition Index")
                 ax.grid(True, axis='y')
                 ax.set_facecolor('lightgray')
                 ax.set_xlim(0, 8)
-                ax.set_ylim(-0.02, max(np.max(cur_data) * 5 / 4, 0.1))
+                ax.set_ylim(-0.01, max(np.max(cur_data) * 5 / 4, 0.1))
                 ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
                 # Render the figure to a RGB array
                 canvas.draw()
@@ -1063,7 +1061,7 @@ class Ui_iPhaser(QMainWindow):
         self.timer.timeout.connect(self.update_image)
         self.timer.start(30)
 
-        self.camera = cv2.VideoCapture(1)
+        self.camera = cv2.VideoCapture(0)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
@@ -1703,7 +1701,7 @@ class Ui_iPhaser(QMainWindow):
         self.setWindowTitle(_translate("iPhaser", "AI-Endo"))
 
     def get_frame_size(self):
-        capture = cv2.VideoCapture(1)
+        capture = cv2.VideoCapture(0)
 
         # Default resolutions of the frame are obtained (system dependent)
         # frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))

@@ -662,15 +662,72 @@
 # final_clip.write_videofile("//home/jeffery/Downloads/extracted_sample.mp4")
 
 
-import os
-import datetime
-from glob import glob
-from moviepy import editor
-from moviepy.video.fx import resize
-import multiprocessing as mp
-video_file = "/home/jeffery/Downloads/extracted_sample.mp4"
-whole_video = editor.VideoFileClip(video_file, audio=False)
-whole_video = whole_video.resize(0.5)
-# # save downsample image
-save_dir = "/home/jeffery/Downloads/extracted_smaple"
-whole_video.write_images_sequence(nameformat=os.path.join(save_dir, "frame-%05d.png"), fps=1, logger=None)
+import sys
+from PyQt5.QtCore import QObject, pyqtSignal, QThreadPool, QRunnable, QThread
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
+from PyQt5.QtGui import QImage, QPixmap
+import numpy as np
+import cv2
+
+
+class CurveWorker(QRunnable):
+    def run(self):
+        for i in range(10):
+            x = np.linspace(0, 2 * np.pi, 100)
+            y = np.sin(x + i / 10)
+            window.update_curve_label(y)
+            QThread.msleep(500)
+
+
+class ImageWorker(QRunnable):
+    def run(self):
+        cap = cv2.VideoCapture(0)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            edges = cv2.Canny(frame, 100, 200)
+            window.update_image_label(edges)
+            QThread.msleep(100)
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.curve_label = QLabel(self)
+        self.curve_label.setGeometry(10, 10, 300, 200)
+
+        self.image_label = QLabel(self)
+        self.image_label.setGeometry(10, 220, 640, 480)
+
+        self.thread_pool = QThreadPool()
+        self.curve_worker = CurveWorker()
+        self.image_worker = ImageWorker()
+
+        self.start_threads()
+
+    def start_threads(self):
+        self.thread_pool.start(self.curve_worker)
+        self.thread_pool.start(self.image_worker)
+
+    def update_curve_label(self, curve):
+        self.curve_label.setText(f"Curve: {curve}")
+
+    def update_image_label(self, image):
+        qimage = self.convert_cvimage_to_qimage(image)
+        self.image_label.setPixmap(QPixmap.fromImage(qimage))
+
+    def convert_cvimage_to_qimage(self, image):
+        height, width = image.shape
+        bytes_per_line = width
+        qimage = QImage(image.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
+        return QPixmap.fromImage(qimage)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
