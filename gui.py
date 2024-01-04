@@ -2,7 +2,7 @@ import os
 import torch
 import cv2
 import sys
-sys.setswitchinterval(0.000001)
+sys.setswitchinterval(0.000001)  # IMPORTANT: Small value for high FPS
 import time
 import warnings
 import argparse
@@ -10,21 +10,18 @@ import numpy as np
 import pandas as pd
 
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import *
+
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
 import torch
 import random
 from datetime import datetime
 
-import matplotlib.pyplot as plt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import ticker
 
-from utils.guis import PhaseCom, draw_segmentation, add_text
+from utils.guis import PhaseCom, draw_segmentation, add_text, CustomTableDelegate
 from utils.parser import ParserUse
 from utils.gui_parts import *
 from utils.report_tools import generate_report
@@ -33,222 +30,8 @@ from canvas import Canvas
 now = datetime.now()
 
 warnings.filterwarnings("ignore")
-DEFAULT_STYLE = """
-                QProgressBar{
-                    border: 3px solid black;
-                    background-color: white;
-                    text-align: center;
-                    height: 20px;
-                }
-                QProgressBar::chunk {
-                    background-color: green;
-                }
-                """
-COMBOBOX = """
-            QComboBox {
-                border: 1px #336699;
-                border-radius: 3px;
-                padding: 1px 2px 1px 2px;
-                background-color: #336699;
-                color: white;
-                width: 250px;
-                height: 30px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #336699;
-                color: white;
-            }
-            QComboBox QAbstractItemView::item {
-                height: 80px; 
-                font-size: 18px;
-                padding: 5px 10px;
-            }
-        """
-
-
-def add_text(fc, results, fps, nt_index, frame):
-    w, h, c = frame.shape
-    cv2.putText(frame, "    Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (22, 40), cv2.FONT_HERSHEY_SIMPLEX,
-                1.5, (210, 194, 0), 4)
-    cv2.putText(frame, "  Trainee: {:<15s}".format(fps), (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
-    cv2.putText(frame, "   Phase: {:<15s}".format(results), (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
-    cv2.putText(frame, "NT-index: {:<.3f}".format(nt_index), (20, 190), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
-
-    # cv2.putText(frame, " Blood vessel".format(fps), (140, w - 40),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
-    # cv2.putText(frame, " Muscularis".format(fps), (140, w - 80),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-    # cv2.putText(frame, " Submucosa".format(fps), (140, w - 120),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
-
-    return frame
-
-class CustomTableDelegate(QStyledItemDelegate):
-    def paint(self, painter, option, index):
-        super().paint(painter, option, index)
-
-        if option.state & QStyle.State_Selected:
-            painter.save()
-            font = QFont()
-            font.setPointSize(12)
-            font.setBold(True)
-            painter.setFont(font)
-            painter.fillRect(option.rect, QBrush(QColor("lightgrey")))
-            painter.setPen(QPen(QColor("black")))
-            painter.drawText(option.rect, Qt.AlignCenter, index.data())
-            painter.restore()
-
-class ImageProcessingThread(QThread):
-    processed_frame = pyqtSignal(np.ndarray)
-    processing_stop_signal = pyqtSignal()
-    def __init__(self, start_x, end_x, start_y, end_y, cfg):
-        super().__init__()
-        self.start_x = start_x
-        self.end_x = end_x
-        self.start_y = start_y
-        self.end_y = end_y
-        self.frames_to_process = []
-        self.frames_to_process_len = 0
-        self.phaseseg = PhaseCom(arg=cfg)
-        self.processing_interval = 2  # Control the
-        self.processing_stop = False
-
-    def run(self):
-        while not self.processing_stop:
-            if self.frames_to_process_len >= 1:
-                frame = self.frames_to_process
-                pred = self.process_image(frame)
-                self.frames_to_process = []
-                self.frames_to_process_len = 0
-                self.processed_frame.emit(pred)
-            if self.processing_stop:
-                break
-
-    def process_image(self, cv_img):
-        # cv_img = img[self.start_x:self.end_x, self.start_y:self.end_y]  # Crop images
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        pred = self.phaseseg.phase_frame(rgb_image)
-
-        return pred
-
-    def add_frame(self, frame):
-        self.frames_to_process = frame
-        self.frames_to_process_len += 1
-
-    def stop(self):
-        self.processing_stop = True
-        self.processing_stop_signal.emit()
-
-class VideoReadThread(QThread):
-    frame_data = pyqtSignal(np.ndarray, int)
-
-    def __init__(self):
-        super().__init__()
-        self._is_running = False
-        self.frame_index = 0
-
-    def run(self):
-        # time.sleep(30)
-        self._is_running = True
-        camera = cv2.VideoCapture(0)
-        camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        # camera.set(cv2.CAP_PROP_FPS, 50)
-
-        while self._is_running:
-            ret, frame = camera.read()
-            if ret:
-                self.frame_index += 1
-                self.frame_data.emit(frame, self.frame_index)
-
-            if not ret:
-                camera.release()
-                self.frame_index = 0
-                camera = cv2.VideoCapture(0)
-                camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-                camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-                camera.set(cv2.CAP_PROP_FPS, 17)
-                continue
-
-        camera.release()
-
-class ReportThread(QThread):
-    out_file_path = pyqtSignal(str)
-
-    def __init__(self, log_dir):
-        super().__init__()
-        self.log_dir = log_dir
-        self.update_report = False
-
-    def run(self):
-        while True:
-            if self.update_report:
-
-                dialog = QDialog()
-                dialog.setWindowTitle("Progress")
-                layout = QVBoxLayout(dialog)
-                progress_label = QLabel("Progress: 0%")
-                progress_bar = QProgressBar()
-                layout.addWidget(progress_label)
-                layout.addWidget(progress_bar)
-                dialog.setFixedSize(300, 100)
-                dialog.show()
-
-                report_file = generate_report(self.log_dir, progress_label, progress_bar, dialog)
-                report_path = os.path.abspath(report_file)
-                QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(report_path))
-                self.update_report = False
-                self.out_file_path.emit(report_file)
-    def report_signal(self, generate_flag):
-        self.update_report = generate_flag
-        print("Geting report signal", generate_flag)
-
-class PlotCurveThread(QThread):
-    ploted_curve_array = pyqtSignal(np.ndarray)
-    plot_stop_signal = pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-        self.processing_interval = 10
-        self.data_to_plot = []
-        self.data_to_plot_len = 0
-        self.plot_stop=False
-
-    def run(self):
-        prev_time = int(time.time())
-        while not self.plot_stop:
-            cur_time = int(time.time())
-            if cur_time > prev_time and self.data_to_plot_len >= self.processing_interval:
-                prev_time = cur_time
-                cur_data = self.data_to_plot[0]
-                time_len = self.data_to_plot[1] + 2
-                self.data_to_plot = []
-                self.data_to_plot_len = 0
-                fig = Figure(figsize=(5.7, 3.4), dpi=80)
-                fig.patch.set_facecolor('lightgray')
-                canvas = FigureCanvas(fig)
-                ax = fig.add_subplot(1, 1, 1)
-                ax.plot(np.linspace(1, time_len, cur_data.shape[0]) / 60, cur_data, linewidth=2)
-                ax.set_xlabel("Time / Minute")
-                ax.set_ylabel("Normalized Transition Index")
-                ax.grid(True, axis='y')
-                ax.set_facecolor('lightgray')
-                ax.set_xlim(0, 8)
-                ax.set_ylim(-0.01, max(np.max(cur_data) * 5 / 4, 0.1))
-                ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
-                # Render the figure to a RGB array
-                canvas.draw()
-                width, height = fig.get_size_inches() * fig.get_dpi()
-                image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8').reshape(int(height), int(width), 3)
-
-                self.ploted_curve_array.emit(image)
-            if self.plot_stop:
-                break
-
-    def add_data(self, data):
-        self.data_to_plot = data
-        self.data_to_plot_len += 1
-
-    def stop(self):
-        self.plot_stop = True
-        self.plot_stop_signal.emit()
+from utils.guis import DEFAULT_STYLE, COMBOBOX, CustomTableDelegate
+from utils.threads import ImageProcessingThread, VideoReadThread, ReportThread, PlotCurveThread
 
 
 class Ui_iPhaser(QMainWindow):
@@ -653,26 +436,6 @@ class Ui_iPhaser(QMainWindow):
         LowerLowerLayout.addWidget(self.table)
         LowerVLayout.addWidget(self.LowerLowerWidget)
         LowerVLayout.setAlignment(Qt.AlignCenter)
-
-        # self.summaryReportOutput2 = QLabel()
-        # self.summaryReportOutput2.setStyleSheet("background-color: white;")
-        # self.summaryReportOutput2.setFixedSize(400, 200)
-
-        # self.fullReportButton = QPushButton("Get Full Report")
-        # self.fullReportButton.setObjectName("FullReportButton")
-        # self.fullReportButton.setFont(QFont("Arial", 16, QFont.Bold))
-        # self.fullReportButton.setStyleSheet("QPushButton"
-        #                                     "{"
-        #                                     "background-color: green;"
-        #                                     "color: dark blue;"
-        #                                     "padding: 5px 15px;"
-        #                                     "margin-top: 10px;"
-        #                                     "outline: 1px;"
-        #                                     "min-width: 8em;"
-        #                                     "}")
-        # self.fullReportButton.setFixedSize(200, 50)
-        # self.fullReportButton.clicked.connect(self.generateReport)
-
 
         # LowerRightVLayout.addWidget(self.fullReportButton)
 

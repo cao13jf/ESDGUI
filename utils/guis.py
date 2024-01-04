@@ -16,6 +16,12 @@ from configs.para import args
 from model.resnet import ResNet
 from model.mstcn import MultiStageModel
 from model.transformer import Transformer
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QStyledItemDelegate
+from PyQt5.QtWidgets import QApplication, QPushButton, QStyle
+from PyQt5.QtGui import QFont, QBrush, QColor, QPen
+
+
 
 
 from  torchvision.utils import draw_segmentation_masks
@@ -31,6 +37,63 @@ phase_dict_key = ['idle', 'marking', 'injection', 'dissection']
 for i, phase in enumerate(phase_dict_key):
     label_dict[i] = phase
 
+
+# ============================================
+# Variables for defining the style of components
+# ============================================
+DEFAULT_STYLE = """
+                QProgressBar{
+                    border: 3px solid black;
+                    background-color: white;
+                    text-align: center;
+                    height: 20px;
+                }
+                QProgressBar::chunk {
+                    background-color: green;
+                }
+                """
+COMBOBOX = """
+            QComboBox {
+                border: 1px #336699;
+                border-radius: 3px;
+                padding: 1px 2px 1px 2px;
+                background-color: #336699;
+                color: white;
+                width: 250px;
+                height: 30px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #336699;
+                color: white;
+            }
+            QComboBox QAbstractItemView::item {
+                height: 80px; 
+                font-size: 18px;
+                padding: 5px 10px;
+            }
+        """
+
+# ============================================
+# Define tools for
+# ============================================
+class CustomTableDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        super().paint(painter, option, index)
+
+        if option.state & QStyle.State_Selected:
+            painter.save()
+            font = QFont()
+            font.setPointSize(12)
+            font.setBold(True)
+            painter.setFont(font)
+            painter.fillRect(option.rect, QBrush(QColor("lightgrey")))
+            painter.setPen(QPen(QColor("black")))
+            painter.drawText(option.rect, Qt.AlignCenter, index.data())
+            painter.restore()
+
+# ============================================
+# Class for integrating functions
+# ============================================
 class PhaseSeg(object):
     """
     The class performs generic object detection on a video file.
@@ -314,18 +377,21 @@ class PhaseCom(object):
     # hu vessel
     # lan mus
 
-def add_text(fc, results, fps, frame):
-
+def add_text(fc, results, fps, nt_index, frame):
     w, h, c = frame.shape
-    cv2.putText(frame, "   Time: {:<55s}".format(fc), (30, 45),  cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 4)
-    cv2.putText(frame, "  Phase: {:<15s}".format(results), (30, 85),  cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 4)
-    cv2.putText(frame, " Trainee: {:<15s}".format(fps), (30, 125),  cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 4)
+    cv2.putText(frame, "    Time: {:<55s}".format(fc.split("-")[-1].split(".")[0]), (22, 40), cv2.FONT_HERSHEY_SIMPLEX,
+                1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "  Trainee: {:<15s}".format(fps), (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "   Phase: {:<15s}".format(results), (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
+    cv2.putText(frame, "NT-index: {:<.3f}".format(nt_index), (20, 190), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (210, 194, 0), 4)
 
     # cv2.putText(frame, " Blood vessel".format(fps), (140, w - 40),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
     # cv2.putText(frame, " Muscularis".format(fps), (140, w - 80),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
     # cv2.putText(frame, " Submucosa".format(fps), (140, w - 120),  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
 
     return frame
+
+
 
 def add_layer(preds, result_img, alpha):
     colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255]]
