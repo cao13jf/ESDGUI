@@ -38,31 +38,18 @@ class Ui_iPhaser(QMainWindow):
     def __init__(self):
         super(Ui_iPhaser, self).__init__()
 
-    def setupUi(self, cfg):
-        self.setObjectName("iPhaser")
-        self.resize(1825, 1175)
-        self.setMinimumHeight(965)
-        self.setMinimumWidth(965)
-        self.setStyleSheet("QWidget#iPhaser{background-color: rgb(28, 69, 135)}")
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        old_pos = self.frameGeometry().getRect()
-        curr_x = old_pos[2]
-        curr_y = old_pos[3]
-        df = pd.read_excel('dataset/Example_frame_colo.xlsx', engine='openpyxl')
-        self.annotations = df["Phase"].tolist()
+    def __init_variables(self):
         self.redo = False
         self.point_size = 1
-        self.mQImage = QPixmap('./images/test.jpg')
         self.cbFlag = 0
         self.camera_frame = None
-        self.size = QSize(curr_x - 25 - 500, curr_y - 65 - 250)
-        self.old_pos = self.frameGeometry().getRect()
         self.save_folder = "../Records"
         if not os.path.isdir(self.save_folder):
             os.makedirs(self.save_folder)
         self.down_ratio = 1  # cfg.down_ratio
-        # Statue parameters
+
         self.init_status()
+
         self.FRAME_WIDTH, self.FRAME_HEIGHT, self.stream_fps = self.get_frame_size()
         self.MANUAL_FRAMES = self.stream_fps * cfg.manual_set_fps_ratio
         self.manual_frame = 0
@@ -77,14 +64,7 @@ class Ui_iPhaser(QMainWindow):
         self.fps = 0
         self.selected_tool = 0
         self.f_image = None
-        self.surgeons = QComboBox()
-        self.surgeons.setObjectName("SurgeonsName")
-        self.surgeons.setStyleSheet(COMBOBOX)
-        self.surgeons.setEditable(True)
-        self.surgeons.lineEdit().setAlignment(Qt.AlignCenter)
-        self.surgeons.lineEdit().setFont(QFont("Arial", 16, QFont.Bold))
-        self.surgeons.lineEdit().setReadOnly(True)
-        self.surgeons.setCurrentIndex(-1)
+
         self.pred = "--"
         self.preds = []
         self.pred_phases = []
@@ -105,22 +85,7 @@ class Ui_iPhaser(QMainWindow):
         self.bbb = 0
         self.prev_second = 0
         self.index2phase = {0: "idle", 1: "marking", 2: "injection", 3: "dissection"}
-        self.centralwidget = QWidget(self)
-        self.centralwidget.setObjectName("centralwidget")
-        self.centralwidget.resizeEvent = self.windowResized
-        self.updating = True
 
-        # # 在主窗口中添加usbVideo控件
-        # self.usbVideo = usbVideo(self.size, parent=self.centralwidget)
-        # self.usbVideo.setGeometry(QtCore.QRect(500, 250, curr_x-25-500, curr_y-65-250))
-        # newly added
-        self.DisplayVideo = QtWidgets.QLabel(self.centralwidget)
-        self.DisplayVideo.setScaledContents(True)
-        self.DisplayVideo.setStyleSheet("background-color: black;")
-        self.DisplayVideo.setText("")
-        self.DisplayVideo.setObjectName("DisplayVideo")
-        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.DisplayVideo.setSizePolicy(size_policy)
 
         self.video = False
         self.disply_width = 1080
@@ -138,29 +103,32 @@ class Ui_iPhaser(QMainWindow):
         self.start_time = "--:--:--"
         self.trainee_name = "--"
         self.manual_set = "--"
+        self.updating = True
+
         # model prediction
         # self.centralwidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.setCentralWidget(self.usbVideo)
         # self.setCentralWidget(self.centralwidget)
-        self.label_mask = QImage()
-        self.image = QImage()
-        self.canvas = Canvas(self.label_mask, self.image, parent=self.centralwidget)
-        # self.canvas.setGeometry(QtCore.QRect(500, 250, curr_x-25-500, curr_y-65-250))
-        # self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.canvas.setScaledContents(True)
-        # self.setCentralWidget(self.centralwidget)
-        # self.centralWidget.addWidget(self.canvas)
-        self.bu = 0
-        self.fileButton = QPushButton('File', self)
-        self.fileButton.setFont(QFont("Arial", 12, QFont.Bold))
-        self.fileButton.setGeometry(QtCore.QRect(0, 0, 60, 25))
-        self.fileButton.setStyleSheet("background-color:#dee0e3;cocanvas import Canvaslor:black;")
-        self.fileButton.setObjectName('FileButton')
-        self.settingButton = QPushButton('Setting', self)
-        self.settingButton.setFont(QFont("Arial", 12, QFont.Bold))
-        self.settingButton.setGeometry(QtCore.QRect(60, 0, 60, 25))
-        self.settingButton.setStyleSheet("background-color:#dee0e3;color:black;")
-        self.settingButton.setObjectName('SettingButton')
+
+    def setupUi(self, cfg):
+        self.__init_variables()
+        self.setObjectName("iPhaser")
+        self.resize(1825, 1175)
+        self.setMinimumHeight(965)
+        self.setMinimumWidth(965)
+        self.setStyleSheet("QWidget#iPhaser{background-color: rgb(28, 69, 135)}")
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        old_pos = self.frameGeometry().getRect()
+        curr_x = old_pos[2]
+        curr_y = old_pos[3]
+
+        self.mQImage = QPixmap('./images/test.jpg')
+        self.size = QSize(curr_x - 25 - 500, curr_y - 65 - 250)
+        self.old_pos = self.frameGeometry().getRect()
+
+        self.centralwidget = QWidget(self)
+        self.centralwidget.setObjectName("centralwidget")
+        self.centralwidget.resizeEvent = self.windowResized
 
         self.startButton = QPushButton(self)
         self.startButton.setEnabled(True)
@@ -186,56 +154,68 @@ class Ui_iPhaser(QMainWindow):
         self.stopButton.setIconSize(QtCore.QSize(150, 150))
         self.stopButton.clicked.connect(self.onButtonClickStop)
 
+        self.VideoCanvas = QtWidgets.QLabel(self.centralwidget)
+        self.VideoCanvas.setScaledContents(True)
+        self.VideoCanvas.setStyleSheet("background-color: black;")
+        self.VideoCanvas.setText("")
+        self.VideoCanvas.setObjectName("DisplayVideo")
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.VideoCanvas.setSizePolicy(size_policy)
+
+        # =============================
+        # Case info layout
+        # =============================
+        self.trainining_session_components = QtWidgets.QVBoxLayout()
+        self.trainining_session_components.setObjectName("VLayout1")
+
+        self.train_title = QtWidgets.QLabel('Training Session')
+        self.train_title.setObjectName("TrainLabelTitle")
+        self.train_title.setStyleSheet("color:white;")
+        self.train_title.setFont(QFont("Arial", 18, QFont.Bold))
+        self.trainining_session_components.addWidget(self.train_title, 16)
+
+        self.trainLabel = QtWidgets.QWidget()
+        self.trainLabel.setObjectName("TrainLabel")
+        self.trainLabel.setAttribute(Qt.WA_StyledBackground, True)
+        self.trainLabel.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
+        self.trainining_session_components.addWidget(self.trainLabel, 84)
+
         self.layoutWidget1 = QtWidgets.QWidget(self)
         self.layoutWidget1.setGeometry(QtCore.QRect(500, 45, 440, 225))
         self.layoutWidget1.setObjectName("layoutWidget1")
         self.verticalLayout1 = QtWidgets.QHBoxLayout(self.layoutWidget1)
         self.verticalLayout1.setObjectName("verticalLayout1")
+        self.verticalLayout1.addLayout(self.trainining_session_components)
+        
 
-        self.layoutWidget2 = QtWidgets.QWidget(self)
-        self.layoutWidget2.setGeometry(QtCore.QRect(30, 620, 910, 600))
-        self.layoutWidget2.setObjectName("layoutWidget2")
-        self.verticalLayout2 = QtWidgets.QVBoxLayout(self.layoutWidget2)
-        self.verticalLayout2.setObjectName("verticalLayout2")
-
-        self.layoutWidget3 = QtWidgets.QWidget(self)
-        self.layoutWidget3.setGeometry(QtCore.QRect(30, 45, 440, 270))
-        self.layoutWidget3.setObjectName("layoutWidget3")
-        self.verticalLayout3 = QtWidgets.QVBoxLayout(self.layoutWidget3)
-        self.verticalLayout3.setObjectName("verticalLayout3")
-
-        self.layoutWidget4 = QtWidgets.QWidget(self)
-        self.layoutWidget4.setGeometry(QtCore.QRect(30, 275, 440, 400))
-        self.layoutWidget4.setObjectName("layoutWidget4")
-        self.verticalLayout4 = QtWidgets.QVBoxLayout(self.layoutWidget4)
-        self.verticalLayout4.setObjectName("verticalLayout4")
-
-        self.layoutWidget5 = QtWidgets.QWidget(self)
-        self.layoutWidget5.setGeometry(QtCore.QRect(500, 275, 440, 400))
-        self.layoutWidget5.setObjectName("layoutWidget5")
-        self.verticalLayout5 = QtWidgets.QVBoxLayout(self.layoutWidget5)
-        self.verticalLayout5.setObjectName("verticalLayout5")
+        self.case_info_widget = QtWidgets.QWidget(self)
+        self.case_info_widget.setGeometry(QtCore.QRect(30, 45, 440, 270))
+        self.case_info_widget.setObjectName("layoutWidget3")
+        self.case_info_components = QtWidgets.QVBoxLayout(self.case_info_widget)
+        self.case_info_components.setObjectName("verticalLayout3")
 
 
-        # start of training session
-        self.VLayout1 = QtWidgets.QVBoxLayout()
-        self.VLayout1.setObjectName("VLayout1")
-        self.trainLabelTitle = QtWidgets.QLabel('Training Session')
-        self.trainLabelTitle.setObjectName("TrainLabelTitle")
-        self.trainLabelTitle.setStyleSheet("color:white;")
-        self.trainLabelTitle.setFont(QFont("Arial", 18, QFont.Bold))
-        self.VLayout1.addWidget(self.trainLabelTitle, 16)
-        self.trainLabel = QtWidgets.QWidget()
-        self.trainLabel.setObjectName("TrainLabel")
-        self.trainLabel.setAttribute(Qt.WA_StyledBackground, True)
-        self.trainLabel.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
-        self.VLayout1.addWidget(self.trainLabel, 84)
-        self.verticalLayout1.addLayout(self.VLayout1)
+        # ==============================
+        # Prediction results layout
+        # ==============================
+        self.phase_pred_widget = QtWidgets.QWidget(self)
+        self.phase_pred_widget.setGeometry(QtCore.QRect(30, 275, 440, 400))
+        self.phase_pred_widget.setObjectName("layoutWidget4")
+        self.phase_pred_info = QtWidgets.QVBoxLayout(self.phase_pred_widget)
+        self.phase_pred_info.setObjectName("verticalLayout4")
+
+        # ==============================
+        # Online analysis results
+        # ==============================
+        self.online_analysis_widget = QtWidgets.QWidget(self)
+        self.online_analysis_widget.setGeometry(QtCore.QRect(500, 275, 440, 400))
+        self.online_analysis_widget.setObjectName("layoutWidget5")
+        self.online_analysis_info = QtWidgets.QVBoxLayout(self.online_analysis_widget)
+        self.online_analysis_info.setObjectName("verticalLayout5")
         # end of training session
 
         # start of summary report
-
-        ContentUpperWidget = QtWidgets.QWidget(self)
+        report_tex_widget = QtWidgets.QWidget(self)
         egrid = QGridLayout()
         group1 = QGroupBox()
         group1.setObjectName("DurationGroup")
@@ -303,6 +283,17 @@ class Ui_iPhaser(QMainWindow):
         e8.setFont(QFont("Arial", 16, QFont.Bold))
         e8.setStyleSheet("color: white;  color: white；")
         # e9.setAlignment(Qt.AlignCenter)
+
+        # Surgeon info
+        self.surgeons = QComboBox()
+        self.surgeons.setObjectName("SurgeonsName")
+        self.surgeons.setStyleSheet(COMBOBOX)
+        self.surgeons.setEditable(True)
+        self.surgeons.lineEdit().setAlignment(Qt.AlignCenter)
+        self.surgeons.lineEdit().setFont(QFont("Arial", 16, QFont.Bold))
+        self.surgeons.lineEdit().setReadOnly(True)
+        self.surgeons.setCurrentIndex(-1)
+
         e10 = QLabel()
         hbox_1.addWidget(e8)
         hbox_1.addWidget(self.surgeons)
@@ -351,26 +342,24 @@ class Ui_iPhaser(QMainWindow):
         # self.ax_bar.set_axis_off()
         # self.phase_colors = {"idle": "blue", "marking": "green", "injection": "yellow", "dissection": "red"}
 
-        ContentUpperWidget.setLayout(upperHlayout)
+        report_tex_widget.setLayout(upperHlayout)
 
-        self.VLayout2 = QtWidgets.QVBoxLayout()
-        self.VLayout2.setObjectName("VLayout2")
+        self.report_components = QtWidgets.QVBoxLayout()
+        self.report_components.setObjectName("VLayout2")
+
         self.summaryReportTitle = QtWidgets.QLabel('Summary Report')
         self.summaryReportTitle.setObjectName("SummaryReportTitle")
         self.summaryReportTitle.setStyleSheet("color:white;")
         self.summaryReportTitle.setFont(QFont("Arial", 18, QFont.Bold))
-        self.VLayout2.addWidget(self.summaryReportTitle, 16)
+        self.report_components.addWidget(self.summaryReportTitle, 16)
+
         self.summaryReportContent = QtWidgets.QWidget()
         self.summaryReportContent.setObjectName("summaryReportContent")
         self.summaryReportContent.setAttribute(Qt.WA_StyledBackground, True)
         self.summaryReportContent.setStyleSheet("background-color: rgb(98, 154, 202); border-radius:5px")
         self.ContentVerticalLayout = QtWidgets.QVBoxLayout()
         self.summaryReportContent.setLayout(self.ContentVerticalLayout)
-        self.VLayout2.addWidget(self.summaryReportContent, 84)
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
-        line.setStyleSheet("background-color: white;")
+        self.report_components.addWidget(self.summaryReportContent, 84)
 
         ContentLowerWidget = QtWidgets.QWidget(self)
         LowerVLayout = QtWidgets.QVBoxLayout()
@@ -439,12 +428,21 @@ class Ui_iPhaser(QMainWindow):
 
         # LowerRightVLayout.addWidget(self.fullReportButton)
 
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setStyleSheet("background-color: white;")
 
-        self.ContentVerticalLayout.addWidget(ContentUpperWidget)
+        self.ContentVerticalLayout.addWidget(report_tex_widget)
         self.ContentVerticalLayout.addWidget(line)
         self.ContentVerticalLayout.addWidget(ContentLowerWidget)
 
-        self.verticalLayout2.addLayout(self.VLayout2)
+        self.layoutWidget2 = QtWidgets.QWidget(self)
+        self.layoutWidget2.setGeometry(QtCore.QRect(30, 620, 910, 600))
+        self.layoutWidget2.setObjectName("layoutWidget2")
+        self.verticalLayout2 = QtWidgets.QVBoxLayout(self.layoutWidget2)
+        self.verticalLayout2.setObjectName("verticalLayout2")
+        self.verticalLayout2.addLayout(self.report_components)
         # end of summary report
 
 
@@ -454,17 +452,17 @@ class Ui_iPhaser(QMainWindow):
         case_information_widget.setObjectName(name.title().replace(' ', '') + 'Title')
         case_information_widget.setFont(QFont('Arial', 18, QFont.Bold))
         case_information_widget.setStyleSheet("color: white;")
-        self.verticalLayout3.addWidget(case_information_widget, 4)
+        self.case_info_components.addWidget(case_information_widget, 4)
         widget1 = QtWidgets.QWidget()
         widget1.setObjectName(name.title().replace(' ', ''))
         widget1.setAttribute(Qt.WA_StyledBackground, True)
         widget1.setStyleSheet(
             f"QWidget#{name.title().replace(' ', '')}" + "{background-color: rgb(98, 154, 202); border-radius:5px;}")
-        self.verticalLayout3.addWidget(widget1, 21)
+        self.case_info_components.addWidget(widget1, 21)
         gapWidget = QtWidgets.QWidget()
         gapWidget.setFixedWidth(50)  # Set the desired width for the gap
         gapWidget.setObjectName(name.title().replace(' ', '') + 'Gap')
-        self.verticalLayout3.addWidget(gapWidget, 5)
+        self.case_info_components.addWidget(gapWidget, 5)
 
         vlayout = QVBoxLayout(widget1)
         vlayout.setObjectName("CaseInformationVlayout")
@@ -582,17 +580,17 @@ class Ui_iPhaser(QMainWindow):
         phase_recognition_widget.setObjectName(name.title().replace(' ', '') + 'Title')
         phase_recognition_widget.setFont(QFont('Arial', 18, QFont.Bold))
         phase_recognition_widget.setStyleSheet("color: white;")
-        self.verticalLayout4.addWidget(phase_recognition_widget, 4)
+        self.phase_pred_info.addWidget(phase_recognition_widget, 4)
         widget2 = QtWidgets.QWidget()
         widget2.setObjectName(name.title().replace(' ', ''))
         widget2.setAttribute(Qt.WA_StyledBackground, True)
         widget2.setStyleSheet(
             f"QWidget#{name.title().replace(' ', '')}" + "{background-color: rgb(98, 154, 202); border-radius:5px;}")
-        self.verticalLayout4.addWidget(widget2, 21)
+        self.phase_pred_info.addWidget(widget2, 21)
         gapWidget = QtWidgets.QWidget()
         gapWidget.setFixedWidth(50)  # Set the desired width for the gap
         gapWidget.setObjectName(name.title().replace(' ', '') + 'Gap')
-        self.verticalLayout4.addWidget(gapWidget, 5)
+        self.phase_pred_info.addWidget(gapWidget, 5)
 
         widget3 = QtWidgets.QWidget(self)
         e1 = QLabel('Idle')
@@ -726,17 +724,17 @@ class Ui_iPhaser(QMainWindow):
         online_analytics_widget.setObjectName(name.title().replace(' ', '') + 'Title')
         online_analytics_widget.setFont(QFont('Arial', 18, QFont.Bold))
         online_analytics_widget.setStyleSheet("color: white;")
-        self.verticalLayout5.addWidget(online_analytics_widget, 4)
+        self.online_analysis_info.addWidget(online_analytics_widget, 4)
         widget4 = QtWidgets.QWidget()
         widget4.setObjectName(name.title().replace(' ', ''))
         widget4.setAttribute(Qt.WA_StyledBackground, True)
         widget4.setStyleSheet(
             f"QWidget#{name.title().replace(' ', '')}" + "{background-color: rgb(98, 154, 202); border-radius:5px;}")
-        self.verticalLayout5.addWidget(widget4, 21)
+        self.online_analysis_info.addWidget(widget4, 21)
         gapWidget = QtWidgets.QWidget()
         gapWidget.setFixedWidth(50)  # Set the desired width for the gap
         gapWidget.setObjectName(name.title().replace(' ', '') + 'Gap')
-        self.verticalLayout5.addWidget(gapWidget, 5)
+        self.online_analysis_info.addWidget(gapWidget, 5)
 
         # Create the gray rectangles
         self.rect1 = QLineEdit()
@@ -900,7 +898,7 @@ class Ui_iPhaser(QMainWindow):
 
 
         # Set the new geometry of the video widget
-        self.DisplayVideo.setGeometry(QtCore.QRect(970, 25, videoWidth, videoHeight))
+        self.VideoCanvas.setGeometry(QtCore.QRect(970, 25, videoWidth, videoHeight))
 
         # Calculate the new position of the image label
         imageWidth = self.imageLabel.pixmap().width()
@@ -964,7 +962,7 @@ class Ui_iPhaser(QMainWindow):
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
         p = convert_to_Qt_format.scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
         p = QPixmap.fromImage(p)
-        self.DisplayVideo.setPixmap(p)
+        self.VideoCanvas.setPixmap(p)
 
     def display_curve(self, curve_frame):
         cirve_frame = cv2.cvtColor(curve_frame, cv2.COLOR_RGB2BGR)
@@ -990,13 +988,7 @@ class Ui_iPhaser(QMainWindow):
 
         return random_numbers
     def update_pred(self, pred):
-        # phase_dict = {'idle': 1, 'marking': 2, 'injection': 3, 'dissection': 4}
-        # annotation_phase = self.annotations[int(self.frame_index / 50)]
 
-        # pred_index = phase_dict[annotation_phase]
-        # pred = np.array(self.generate_random_numbers(pred_index))
-
-        print(datetime.now())
         self.manual_frame = self.manual_frame - 1
         pred_index = np.argmax(pred)
         prob = np.exp(pred) / sum(np.exp(pred))
@@ -1099,7 +1091,6 @@ class Ui_iPhaser(QMainWindow):
         self.startButton.setEnabled(False)
         self.stopButton.setStyleSheet("background-color: DarkRed;")
         self.stopButton.setEnabled(True)
-        self.canvas.clear()
         self.flag = True
         self.WORKING = True
         self.video = False
@@ -1151,17 +1142,6 @@ class Ui_iPhaser(QMainWindow):
         self.nt_indexes = [0]
         self.transitions = [0]
         self.pred_phases = []
-
-
-    def pick_color(self):
-        color = QColorDialog.getColor()
-        idx = self.labelSelector.currentIndex()
-        if color.isValid() and idx != -1:
-            self.canvas.brush_color = color
-            self.color.pop(idx)
-            self.color.insert(idx, color)
-            label = self.findChild(QLabel, f"Object{idx + 1}")
-            label.setStyleSheet(f"background-color: {color.name()}")
 
     def resizeEvent(self, event):
         old_pos = self.frameGeometry().getRect()
@@ -1235,129 +1215,6 @@ class Ui_iPhaser(QMainWindow):
         e.addWidget(self.trainee, 3, 0)
         e.addWidget(self.bed, 3, 1)
         self.trainLabel.setLayout(e)
-
-    def load_image(self):
-        if self.video:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setText("Please stop the video before loading a new image")
-            msg.setWindowTitle("Warning")
-            msg.exec_()
-        else:
-            self.DisplayVideo.clear()
-            file_path, _ = QFileDialog.getOpenFileName(self, 'Open Image', '', 'Images (*.png *.xpm *.jpg *.bmp)')
-            self.filepath = file_path
-            if file_path:
-                image = QImage(file_path).scaled(self.size.width(), self.size.height(), Qt.KeepAspectRatio)
-                self.canvas.image = image.convertToFormat(QImage.Format_RGB32)
-                self.canvas.beginLabel = self.beginLabel
-                self.canvas.endLabel = self.endLabel
-                self.label_mask = QImage(image.size(), QImage.Format_ARGB32)
-                self.label_mask.fill(Qt.transparent)
-                self.canvas.label_mask = self.label_mask
-                self.canvas.setPixmap(QPixmap.fromImage(image))
-                self.canvas.setGeometry(QtCore.QRect(500, 250, self.size.width(), self.size.height()))
-                self.labelSelector.setCurrentIndex(-1)
-
-    def on_combobox_changed(self):
-        if self.labelSelector.currentIndex() != -1:
-            idx = self.labelSelector.currentIndex()
-            if self.ru != 0:
-                self.canvas.brush_color = self.color[idx]
-                self.last_idx.append(self.labelSelector.currentIndex())
-                if str(self.labelSelector.currentIndex()) not in self.count_image.keys():
-                    self.count_image[str(self.labelSelector.currentIndex())] = 0
-                self.image_count.append(self.count_image[str(self.labelSelector.currentIndex())])
-                self.bbb = len(self.image_count)
-            self.ru += 1
-
-    def onSliderValueChanged(self, value):
-        self.canvas.brush_size = value
-        self.thickness.setText(str(value))
-
-    def onLineEditsChanged(self, text):
-        if text.isnumeric() and int(text) <= self.slider.maximum() and int(text) >= self.slider.minimum():
-            self.canvas.brush_size = int(text)
-            self.slider.setValue(int(text))
-            self.pbFlag = True
-        elif text.isnumeric() and int(text) > self.slider.maximum():
-            self.thickness.setText(str(self.slider.maximum()))
-            self.canvas.brush_size = self.slider.maximum()
-            self.slider.setValue(self.slider.maximum())
-            self.pbFlag = True
-        elif text.isnumeric() and int(text) < self.slider.minimum():
-            self.thickness.setText(str(self.slider.minimum()))
-            self.canvas.brush_size = self.slider.minimum()
-            self.slider.setValue(self.slider.minimum())
-            self.pbFlag = True
-        else:
-            self.canvas.brush_size = 0
-            self.pbFlag = True
-
-    def onButtonPaint(self):
-        idx = self.labelSelector.currentIndex()
-        if idx != -1:
-            self.canvas.brush_color = self.color[idx]
-            self.canvas.erase = False
-
-    def onButtonErase(self):
-        self.canvas.erase = True
-        # self.canvas.brush_color.setAlphaF(0.01)
-
-    def onButtonSave(self):
-        file_path, _ = QFileDialog.getSaveFileName(self, 'Save Label Mask', '', 'Images (*.png)')
-        if file_path:
-            self.canvas.label_mask.save(file_path)
-
-    def onButtonAddLabel(self):
-        new_color = "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)])
-        new_r, new_g, new_b = hex_to_rgb(new_color)
-        new_color1 = QColor(new_b, new_g, new_r)
-        if new_color1 not in self.color:
-            dlg = CustomMB(self.labelSelector)
-            dlg.exec_()
-            if dlg.finished:
-                self.labelSelector.addItem(dlg.getText())
-                self.color.append(new_color1)
-                count = self.labelSelector.count()
-                self.labelSelector.setCurrentIndex(count - 1)
-                e1_group = QGroupBox()
-                e1_group.setObjectName(f"Object{count}Group")
-                e1_group.setStyleSheet(f"QGroupBox#Object{count}Group" + "{border:0;}")
-                e1_button = QRadioButton()
-                e1_button.setChecked(True)
-                e1_button.setStyleSheet(
-                    "QRadioButton"
-                    "{"
-                    "color : green;"
-                    "}"
-                    "QRadioButton::indicator"
-                    "{"
-                    "width : 20px;"
-                    "height : 20px;"
-                    "}")
-                e1_button.setObjectName(f"Object{count}Button")
-                e1 = QLabel()
-                e1.setObjectName(f"Object{count}")
-                e1.setStyleSheet(f"background-color : {new_color};")
-                e1.setFixedWidth(20)
-                e1.setFixedHeight(20)
-                e2 = QLabel(dlg.getText().title())
-                e2.setObjectName(f"Object{count}Name")
-                e2.setFont(QFont("Arial", 14, QFont.Bold))
-                e2.setStyleSheet("color:black;")
-                hbox_1 = QHBoxLayout()
-                hbox_1.setObjectName(f"Object{count}Layout")
-                hbox_1.addWidget(e1_button)
-                hbox_1.addWidget(e1)
-                hbox_1.addWidget(e2)
-                hbox_1.setAlignment(Qt.AlignLeft)
-                e1_group.setLayout(hbox_1)
-                self.elayout.addWidget(e1_group, count - 1, 0)
-                self.elayout.setAlignment(Qt.AlignLeft)
-
-
-
 
     def countTime(self):
         if self.flag:
